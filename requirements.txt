@@ -18,11 +18,11 @@ requests==2.31.0
 gunicorn==21.2.0
 httpx==0.25.0
 
-# AI Services
+# AI Services (versions précompilées pour éviter Rust)
 openai==0.28.1
 chromadb==0.4.15
-sentence-transformers==2.2.2
-tokenizers==0.15.0
+sentence-transformers==2.2.2.post2
+tokenizers==0.15.0.post1
 transformers==4.35.2
 
 # Utilities
