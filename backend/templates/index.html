@@ -1,0 +1,2898 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-gray-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#002395">
+    <meta name="description" content="Plateforme IA Officielle pour la gestion urbaine et la sécurité à Massy - Développée selon les standards du Gouvernement Français">
+    <title>
+        {% if current_page %}
+            {{ current_page }} — Massy IA | République Française
+        {% else %}
+            Massy IA — Plateforme Nationale Intelligente | République Française
+        {% endif %}
+    </title>
+
+    <!-- Favicon Officiel République Française -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇫🇷</text></svg>">
+
+    <!-- Styles Premium avec dimensions gouvernementales -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #002395;
+            --secondary: #ED2939;
+            --accent: #0055A4;
+            --success: #00994D;
+            --error: #D62728;
+            --warning: #FF9800;
+            --glass: rgba(255, 255, 255, 0.85);
+            --glass-hover: rgba(255, 255, 255, 0.95);
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            --shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --header-height: 72px;
+            --sidebar-width: 280px;
+            --main-padding: 24px;
+            --border-radius: 8px;
+            --font-size-base: 16px;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Marianne:wght@400;500;700&display=swap');
+
+        body {
+            font-family: 'Marianne', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            font-size: var(--font-size-base);
+            color: #1e293b;
+        }
+
+        .gov-header { height: var(--header-height); }
+        .gov-sidebar { width: var(--sidebar-width); }
+        .gov-main { padding: var(--main-padding); }
+        .gov-card { border-radius: var(--border-radius); padding: 1.5rem; margin-bottom: 1.5rem; }
+
+        .glass {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .tab { display: none; }
+        .tab.active { display: block; }
+
+        .chat-container { display: flex; flex-direction: column; height: calc(100vh - var(--header-height) - 120px); min-height: 400px; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 1rem; background: rgba(248, 250, 252, 0.5); border-radius: calc(var(--border-radius) - 2px); margin-bottom: 1rem; }
+        .chat-message { max-width: 85%; padding: 0.875rem 1rem; border-radius: var(--border-radius); margin-bottom: 0.75rem; word-wrap: break-word; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); position: relative; animation: fadeIn 0.3s ease-out; }
+        .chat-user { background: var(--primary); color: white; margin-left: auto; border-bottom-right-radius: calc(var(--border-radius) / 2); }
+        .chat-bot { background: var(--accent); color: white; margin-right: auto; border-bottom-left-radius: calc(var(--border-radius) / 2); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        #map-container { height: calc(100vh - var(--header-height) - 180px); min-height: 500px; border-radius: var(--border-radius); }
+
+        .form-input { border: 1px solid rgba(0, 0, 0, 0.15); transition: var(--transition); padding: 0.625rem 0.875rem; border-radius: calc(var(--border-radius) / 2); font-size: 0.875rem; width: 100%; }
+        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 35, 149, 0.1); outline: none; }
+
+        .btn { border-radius: calc(var(--border-radius) / 2); font-weight: 500; transition: var(--transition); padding: 0.5rem 1rem; font-size: 0.875rem; min-width: 120px; text-align: center; }
+        .btn-primary { background-color: var(--primary); color: white; border: none; }
+        .btn-primary:hover { background-color: #001a73; transform: translateY(-1px); }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 1000; display: none; }
+        .modal-overlay.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { width: 95%; max-width: 600px; margin: 1rem; animation: modalFadeIn 0.3s ease-out; }
+
+        @keyframes modalFadeIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        .france-flag { width: 50px; height: 30px; display: inline-block; }
+        .france-motto { font-size: 8px; font-weight: 600; color: #1e293b; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1; }
+
+        @media (max-width: 768px) {
+            .gov-sidebar { width: 100%; }
+            .chat-container { height: calc(100vh - var(--header-height) - 80px); }
+            #map-container { height: 400px; }
+        }
+
+        .leaflet-container { font-family: 'Marianne', sans-serif; background-color: #f8fafc; }
+        .leaflet-control-attribution { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(5px); font-size: 11px; }
+
+        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+        .badge-primary { background-color: var(--primary); color: white; }
+        .badge-error { background-color: var(--error); color: white; animation: pulse 2s infinite; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        .custom-marker { display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; color: white; text-shadow: 0 0 2px rgba(0, 0, 0, 0.5); }
+
+        .map-legend { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(5px); padding: 1rem; border-radius: var(--border-radius); box-shadow: var(--shadow); font-size: 0.875rem; }
+
+        .scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 35, 149, 0.2); border-radius: 10px; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <!-- Notification Globale -->
+    <div id="notification-toast" class="fixed top-4 right-4 z-[1000] hidden px-4 py-2 rounded-md text-white shadow-lg"></div>
+
+    <!-- Header Officiel -->
+    <header class="gov-header w-full py-4 px-6 flex justify-between items-center fixed top-0 z-40 bg-white/90 backdrop-blur-md shadow-lg">
+        <div class="flex items-center gap-4">
+            <a href="{{ url_for('frontend.index') }}" class="flex flex-col items-center gap-1">
+                <svg class="france-flag" viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="1" height="2" x="0" fill="#0055A4"/>
+                    <path d="M0.3 0.8L0.3 1.5L0.6 1.5L0.6 0.8L0.9 0.8L0.9 1.8L0.5 1.3L0.1 1.8L0.1 0.8Z" fill="white" transform="translate(0.2, 0.2) scale(0.5)"/>
+                    <rect width="1" height="2" x="1" fill="#FFFFFF"/>
+                    <rect width="1" height="2" x="2" fill="#EF4135"/>
+                </svg>
+                <div class="france-motto">RÉPUBLIQUE FRANÇAISE<br>Liberté, Égalité, Fraternité</div>
+            </a>
+            <h1 class="text-xl font-bold text-gray-800 hidden sm:block">Massy IA — Plateforme Nationale</h1>
+        </div>
+
+        <!-- Menu Utilisateur -->
+       <!-- Menu utilisateur professionnel avec style gouvernemental -->
+<div class="flex items-center gap-4">
+  {% if current_user %}
+  <div class="relative" x-data="{ open: false }" @click.away="open = false">
+    <!-- Bouton utilisateur -->
+    <button
+      @click="open = !open"
+      class="flex items-center gap-2 px-3 py-1 rounded-full bg-white/70 backdrop-blur-sm shadow-sm cursor-pointer hover:bg-white transition-colors"
+    >
+      <div class="profile-avatar rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white w-8 h-8">
+        {{ current_user.first_name[0]|upper }}{{ current_user.last_name[0]|upper }}
+      </div>
+      <span class="hidden sm:inline text-gray-800 font-medium">{{ current_user.first_name }}</span>
+      <i class="fas fa-chevron-down ml-1 text-xs text-gray-600"></i>
+    </button>
+
+    <!-- Menu déroulant -->
+    <div
+      x-show="open"
+      x-transition:enter="transition ease-out duration-200"
+      x-transition:enter-start="opacity-0 transform scale-95"
+      x-transition:enter-end="opacity-100 transform scale-100"
+      x-transition:leave="transition ease-in duration-150"
+      x-transition:leave-start="opacity-100 transform scale-100"
+      x-transition:leave-end="opacity-0 transform scale-95"
+      class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 border border-gray-100 z-50"
+    >
+      <div class="px-4 py-2 border-b border-gray-100">
+        <div class="font-medium text-gray-900">{{ current_user.first_name }} {{ current_user.last_name }}</div>
+        <div class="text-sm text-gray-500 capitalize">
+          {%- if current_user.role == 'police' -%}
+            Police Nationale
+          {%- elif current_user.role == 'university' -%}
+            Recherche Scientifique
+          {%- else -%}
+            {{ current_user.role|replace('_', ' ')|capitalize }}
+          {%- endif -%}
+        </div>
+      </div>
+      <div class="py-1">
+        <a href="{{ url_for('frontend.index', tab='profile') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+          <i class="fas fa-user-circle mr-3 text-blue-500"></i>
+          Mon profil
+        </a>
+        {%- if current_user.role == 'police' -%}
+        <a href="{{ url_for('police_bp.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors">
+          <i class="fas fa-shield-alt mr-3 text-red-500"></i>
+          Outils Police
+        </a>
+        {%- elif current_user.role == 'university' -%}
+        <a href="{{ url_for('university_bp.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors">
+          <i class="fas fa-graduation-cap mr-3 text-green-500"></i>
+          Outils Recherche
+        </a>
+        {%- endif -%}
+        <a href="{{ url_for('frontend.index', tab='settings') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+          <i class="fas fa-cog mr-3 text-gray-500"></i>
+          Paramètres
+        </a>
+      </div>
+      <div class="py-1 border-t border-gray-100">
+        <form method="POST" action="{{ url_for('api/auth.logout') }}" class="m-0">
+          <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+            <i class="fas fa-sign-out-alt mr-3"></i>
+            Déconnexion
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="flex items-center gap-2">
+    <a href="{{ url_for('api/auth.login_page') }}" class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-all shadow-sm">
+      <i class="fas fa-sign-in-alt mr-2"></i> Connexion
+    </a>
+    <a href="{{ url_for('api/auth.register_page') }}" class="px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-all shadow-sm">
+      <i class="fas fa-user-plus mr-2"></i> Inscription
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Styles complémentaires -->
+<style>
+  /* Style pour l'avatar */
+  .profile-avatar {
+    width: 2rem;
+    height: 2rem;
+    font-weight: bold;
+  }
+
+  /* Style pour les liens du menu */
+  .fr-menu__link {
+    display: flex;
+    align-items: center;
+  }
+
+  /* Animation pour le menu déroulant */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-5px); }
+  }
+</style>
+
+<!-- Script minimal -->
+<script>
+document.addEventListener('alpine:init', () => {
+  // Initialisation minimale
+});
+</script>
+
+
+
+            
+
+            
+        </div>
+    </header>
+
+    <!-- Contenu Principal -->
+    <main class="gov-main flex-1 pt-[72px] pb-16">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <!-- Sidebar -->
+            <aside class="gov-sidebar lg:col-span-1 space-y-4">
+                <nav class="glass p-4 rounded-xl shadow-sm">
+                    <ul class="space-y-1">
+                        <li>
+                            <a href="{{ url_for('frontend.index', tab='dashboard') }}"
+                               class="w-full text-left block px-3 py-2.5 rounded-lg flex items-center gap-3 transition-colors
+                               {% if active_tab == 'dashboard' %}bg-blue-50 text-blue-600 font-medium shadow-sm{% else %}hover:bg-gray-50{% endif %}">
+                                <i class="fas fa-th-large {% if active_tab == 'dashboard' %}text-blue-600{% else %}text-gray-500{% endif %} text-lg"></i>
+                                <span class="text-sm font-medium">Tableau de Bord</span>
+                            </a>
+                        </li>
+                        <li>
+                            <!-- Bouton du chatbot -->
+
+
+
+
+<!-- Menu avec le lien vers le chatbot -->
+
+
+
+
+<!-- Menu -->
+<ul>
+    <li>
+        <a href="{{ url_for('frontend.index', tab='chatbot') }}"
+           class="w-full text-left block px-3 py-2.5 rounded-lg flex items-center gap-3 transition-colors
+                  {% if active_tab == 'chatbot' %}bg-blue-50 text-blue-600 font-medium shadow-sm{% else %}hover:bg-gray-50{% endif %}">
+            <i class="fas fa-robot {% if active_tab == 'chatbot' %}text-blue-600{% else %}text-gray-500{% endif %} text-lg"></i>
+            <span class="text-sm font-medium">Assistant IA</span>
+        </a>
+    </li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        <li>
+                            <a href="{{ url_for('frontend.index', tab='transport') }}"
+                               class="w-full text-left block px-3 py-2.5 rounded-lg flex items-center gap-3 transition-colors
+                               {% if active_tab == 'transport' %}bg-blue-50 text-blue-600 font-medium shadow-sm{% else %}hover:bg-gray-50{% endif %}">
+                                <i class="fas fa-train-subway {% if active_tab == 'transport' %}text-blue-600{% else %}text-gray-500{% endif %} text-lg"></i>
+                                <span class="text-sm font-medium">Transports</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('frontend.index', tab='shops') }}"
+                               class="w-full text-left block px-3 py-2.5 rounded-lg flex items-center gap-3 transition-colors
+                               {% if active_tab == 'shops' %}bg-blue-50 text-blue-600 font-medium shadow-sm{% else %}hover:bg-gray-50{% endif %}">
+                                <i class="fas fa-store {% if active_tab == 'shops' %}text-blue-600{% else %}text-gray-500{% endif %} text-lg"></i>
+                                <span class="text-sm font-medium">Commerces</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('frontend.index', tab='map') }}"
+                               class="w-full text-left block px-3 py-2.5 rounded-lg flex items-center gap-3 transition-colors
+                               {% if active_tab == 'map' %}bg-blue-50 text-blue-600 font-medium shadow-sm{% else %}hover:bg-gray-50{% endif %}">
+                                <i class="fas fa-map-location-dot {% if active_tab == 'map' %}text-blue-600{% else %}text-gray-500{% endif %} text-lg"></i>
+                                <span class="text-sm font-medium">Carte Interactive</span>
+                            </a>
+                        </li>
+                        {% if current_user and current_user.role == 'police' %}
+                            <li>
+                                <a href="{{ url_for('frontend.index', tab='police') }}"
+                                   class="w-full text-left block px-3 py-2.5 rounded-lg flex items-center gap-3 transition-colors
+                                   {% if active_tab == 'police' %}bg-red-50 text-red-600 font-medium shadow-sm{% else %}hover:bg-red-50{% endif %}">
+                                    <i class="fas fa-shield-halved {% if active_tab == 'police' %}text-red-600{% else %}text-gray-500{% endif %} text-lg"></i>
+                                    <span class="text-sm font-medium">Sécurité Publique</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% if current_user and current_user.role == 'university' %}
+                            <li>
+                                <a href="{{ url_for('frontend.index', tab='university') }}"
+                                   class="w-full text-left block px-3 py-2.5 rounded-lg flex items-center gap-3 transition-colors
+                                   {% if active_tab == 'university' %}bg-green-50 text-green-600 font-medium shadow-sm{% else %}hover:bg-green-50{% endif %}">
+                                    <i class="fas fa-graduation-cap {% if active_tab == 'university' %}text-green-600{% else %}text-gray-500{% endif %} text-lg"></i>
+                                    <span class="text-sm font-medium">Recherche</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                        <li>
+                            <a href="{{ url_for('frontend.index', tab='news') }}"
+                               class="w-full text-left block px-3 py-2.5 rounded-lg flex items-center gap-3 transition-colors
+                               {% if active_tab == 'news' %}bg-blue-50 text-blue-600 font-medium shadow-sm{% else %}hover:bg-gray-50{% endif %}">
+                                <i class="fas fa-newspaper {% if active_tab == 'news' %}text-blue-600{% else %}text-gray-500{% endif %} text-lg"></i>
+                                <span class="text-sm font-medium">Actualités</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <!-- Contenu Dynamique -->
+            <section class="lg:col-span-4 space-y-6">
+                <!-- Tableau de Bord -->
+                <div id="dashboard" class="tab {% if active_tab == 'dashboard' %}active{% else %}hidden{% endif %}">
+                    <div class="glass p-6 rounded-xl shadow-sm">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-gray-800">Tableau de Bord National</h2>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">Mise à jour: {{ datetime.utcnow().strftime('%d/%m/%Y %H:%M') }}</span>
+                                <button id="refresh-dashboard" class="p-1.5 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Statistiques -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                            <div class="glass p-5 rounded-xl border-l-4 border-blue-500">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-500">Opportunités détectées</div>
+                                        <div class="text-3xl font-bold text-gray-800 mt-1">124</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="glass p-5 rounded-xl border-l-4 border-amber-500">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-3 rounded-full bg-amber-100 text-amber-600">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-500">Alertes Sécurité</div>
+                                        <div class="text-3xl font-bold text-amber-600 mt-1">
+                                            {% if current_user and current_user.role == 'police' %}
+                                                {{ police_alerts|length|default(0) }}
+                                            {% else %}
+                                                17
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="glass p-5 rounded-xl border-l-4 border-green-500">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                                        <i class="fas fa-flask"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-500">Analyses en cours</div>
+                                        <div class="text-3xl font-bold text-green-600 mt-1">
+                                            {% if current_user and current_user.role == 'university' %}
+                                                {{ research_results|length|default(0) }}
+                                            {% else %}
+                                                42
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Activité récente -->
+                        <div class="glass p-5 rounded-xl">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold text-gray-700">Activité récente</h3>
+                                <button id="refresh-activity" class="text-sm text-blue-600 hover:text-blue-800 transition-colors">
+                                    <i class="fas fa-sync-alt mr-1"></i> Actualiser
+                                </button>
+                            </div>
+                            <div class="space-y-3" id="recent-activity">
+                                {% for activity in dashboard_activity %}
+                                    <div class="flex items-start gap-3 p-3 hover:bg-blue-50 rounded-lg transition-colors">
+                                        <div class="w-10 h-10 rounded-full
+                                          {% if activity.icon == 'train' %}bg-blue-100
+                                          {% elif activity.icon == 'triangle-exclamation' %}bg-red-100
+                                          {% else %}bg-green-100{% endif %}
+                                          flex items-center justify-center shrink-0">
+                                            <i class="fas fa-{{ activity.icon }} text-xl
+                                              {% if activity.icon == 'train' %}text-blue-600
+                                              {% elif activity.icon == 'triangle-exclamation' %}text-red-600
+                                              {% else %}text-green-600{% endif %}"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="font-medium text-gray-800">{{ activity.title }}</div>
+                                            <div class="text-sm text-gray-500 mt-0.5">
+                                                {{ activity.time }} • {{ activity.description }}
+                                            </div>
+                                        </div>
+                                        {% if activity.type == 'transport' %}
+                                            <span class="badge bg-blue-100 text-blue-800">SNCF</span>
+                                        {% elif activity.type == 'security' %}
+                                            <span class="badge bg-red-100 text-red-800">Urgent</span>
+                                        {% else %}
+                                            <span class="badge bg-gray-100 text-gray-800">Info</span>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <div class="text-center py-8 text-gray-400">
+                                        <i class="fas fa-info-circle mb-2 text-2xl"></i>
+                                        <div>Aucune activité récente</div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assistant IA (Chatbot) -->
+                <div id="chatbot" class="tab {% if active_tab == 'chatbot' %}active{% else %}hidden{% endif %}">
+                    <div class="glass p-6 rounded-xl shadow-sm chat-container">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800">Assistant IA — Service Public</h2>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    {% if current_user %}
+                                        Bonjour {{ current_user.first_name }}, comment puis-je vous aider ?
+                                    {% else %}
+                                        Connectez-vous pour utiliser l'assistant IA complet
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="flex gap-2">
+                                {% if current_user %}
+                                    <button id="chat-history" class="btn btn-secondary">
+                                        <i class="fas fa-clock-rotate-left mr-2"></i> Historique
+                                    </button>
+                                    {% if current_user.role in ['police', 'university'] %}
+                                        <button id="chat-expert-mode" class="btn btn-secondary text-blue-600 hover:text-blue-700">
+                                            <i class="fas fa-microchip mr-2"></i> Mode Expert
+                                        </button>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="chat-container">
+                            <div id="chat-messages" class="chat-messages scrollbar">
+                                {% for message in chat_messages %}
+                                    <div class="chat-message {{ 'chat-user' if message.sender == 'user' else 'chat-bot' }}">
+                                        <div class="chat-content">
+                                            {{ message.content }}
+                                        </div>
+                                        <div class="chat-timestamp">
+                                            {{ message.timestamp.strftime('%H:%M') }}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="chat-message chat-bot">
+                                        <div class="chat-content">
+                                            Bonjour ! Je suis l'assistant IA de la plateforme Massy.
+                                            {% if current_user %}
+                                                {{ current_user.first_name }}, comment puis-je vous aider aujourd'hui ?
+                                            {% else %}
+                                                Connectez-vous pour poser vos questions.
+                                            {% endif %}
+                                        </div>
+                                        <div class="chat-timestamp">
+                                            {{ '{:%H:%M}'.format(datetime.now()) }}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mt-4 border-t border-gray-200 pt-4">
+                                <div class="flex gap-2">
+                                    <input id="chat-input" class="form-input flex-1"
+                                           placeholder="Posez votre question au service public..."
+                                           >
+                                    <button id="chat-send" class="btn btn-primary action-btn"
+                                            {% if not current_user %}disabled{% endif %}>
+                                        <i class="fas fa-paper-plane"></i>
+                                        <span class="ml-1">Envoyer</span>
+                                    </button>
+                                </div>
+                                {% if not current_user %}
+                                    <div class="text-xs text-gray-500 mt-2">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Vous devez être connecté pour utiliser le chat
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transports -->
+                <div id="transport" class="tab {% if active_tab == 'transport' %}active{% else %}hidden{% endif %}">
+                    <div class="glass p-6 rounded-xl shadow-sm">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-gray-800">Transports SNCF/RATP</h2>
+                            <div class="flex items-center gap-4">
+                                <span id="transport-realtime-badge" class="badge bg-red-100 text-red-800 hidden">
+                                    <i class="fas fa-signal mr-1"></i> Temps réel
+                                </span>
+                                <!-- Bouton reste inchangé -->
+<button id="transport-settings" 
+    class="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors">
+    <i class="fas fa-cog"></i>
+</button>
+
+<!-- Drawer de paramètres -->
+<div id="transport-settings-drawer" 
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex justify-end">
+    
+    <!-- Contenu du drawer -->
+    <div class="bg-white w-full sm:w-[480px] h-full shadow-2xl flex flex-col animate-slide-in-right">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center p-4 border-b">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-sliders-h text-blue-600"></i>
+                Paramètres Transport (SNCF)
+            </h2>
+            <button id="close-transport-settings" 
+                class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+
+        <!-- Contenu -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+            
+            <!-- Section Clé API -->
+            <section>
+                <h3 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                    <i class="fas fa-key text-gray-600"></i> Clé API SNCF
+                </h3>
+                <p class="text-gray-500 text-sm mb-3">
+                    Cette clé permet de se connecter à l’API <strong>Navitia/SNCF</strong> pour récupérer les horaires en temps réel.
+                </p>
+                <input 
+                    type="text"
+                    id="navitia-api-key"
+                    class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-400 outline-none"
+                    placeholder="Entrez votre clé API SNCF"
+                >
+                <small class="block mt-1 text-gray-400">
+                    Votre clé reste stockée uniquement dans ce navigateur.
+                </small>
+                <p id="test-result" class="hidden mt-3 text-center"></p>
+            </section>
+
+            <!-- Section Options -->
+            <section>
+                <h3 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                    <i class="fas fa-cogs text-gray-600"></i> Options d’affichage
+                </h3>
+                <div class="flex flex-col gap-3 mt-3">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" id="show-delays" class="h-4 w-4">
+                        <span>Afficher les retards et perturbations</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" id="show-routes" class="h-4 w-4">
+                        <span>Afficher les trajets alternatifs</span>
+                    </label>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-4 border-t flex justify-between">
+            <button 
+                id="test-api-key"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl shadow transition-colors">
+                Tester la clé
+            </button>
+            <button 
+                id="save-api-key"
+                class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-xl shadow transition-colors">
+                Sauvegarder
+            </button>
+        </div>
+    </div>
+</div>
+
+                            </div>
+                        </div>
+
+                        <!-- Formulaire de recherche -->
+                        <div class="glass p-4 rounded-lg mb-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div class="relative">
+                                    <label for="transport-departure" class="block text-sm font-medium text-gray-700 mb-1">Départ</label>
+                                    <input id="transport-departure" placeholder="Ex: Massy TGV"
+                                           class="form-input w-full">
+                                    <div id="departure-autocomplete" class="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg hidden"></div>
+                                </div>
+                                <div class="relative">
+                                    <label for="transport-arrival" class="block text-sm font-medium text-gray-700 mb-1">Arrivée</label>
+                                    <input id="transport-arrival" placeholder="Ex: Paris Gare de Lyon"
+                                           class="form-input w-full">
+                                    <div id="arrival-autocomplete" class="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg hidden"></div>
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <label for="transport-type" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                                    <select id="transport-type" class="form-input w-full">
+                                        <option value="sncf">SNCF</option>
+                                        <option value="ratp">RATP</option>
+                                        <option value="all">Tous</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-2">
+                                <button id="transport-search" class="btn btn-primary flex-1 action-btn">
+                                    <i class="fas fa-search mr-2"></i> Rechercher
+                                </button>
+                                <button id="transport-realtime-toggle" class="btn btn-secondary">
+                                    <i class="fas fa-signal mr-2"></i> Temps réel
+                                </button>
+                                <button id="transport-filters-toggle" class="btn btn-secondary">
+                                    <i class="fas fa-filter mr-2"></i> Filtres
+                                </button>
+                            </div>
+
+                            <!-- Filtres avancés -->
+                            <div id="transport-filters" class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4 hidden">
+                                <select id="transport-status-filter" class="form-input">
+                                    <option value="all">Tous statuts</option>
+                                    <option value="on_time">À l'heure</option>
+                                    <option value="delayed">Retard</option>
+                                    <option value="cancelled">Annulé</option>
+                                </select>
+                                <select id="transport-duration-filter" class="form-input">
+                                    <option value="all">Toutes durées</option>
+                                    <option value="short">Moins de 30 min</option>
+                                    <option value="medium">30-60 min</option>
+                                    <option value="long">Plus de 60 min</option>
+                                </select>
+                                <select id="transport-line-filter" class="form-input">
+                                    <option value="all">Toutes lignes</option>
+                                    <option value="RER">RER</option>
+                                    <option value="Métro">Métro</option>
+                                    <option value="Transilien">Transilien</option>
+                                    <option value="TGV">TGV</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Résultats des trajets -->
+                        <div class="space-y-4" id="transport-results">
+                            {% for journey in transport_journeys %}
+                                <div class="glass p-4 rounded-lg border-l-4
+                                    {% if journey.status == 'on_time' %}border-green-500
+                                    {% elif journey.status == 'delayed' %}border-yellow-500
+                                    {% else %}border-red-500{% endif %}">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <div class="font-bold text-lg">
+                                                    {{ journey.departure_time }} → {{ journey.arrival_time }}
+                                                </div>
+                                                <span class="text-sm
+                                                    {% if journey.status == 'on_time' %}text-green-600
+                                                    {% elif journey.status == 'delayed' %}text-yellow-600
+                                                    {% else %}text-red-600{% endif %}">
+                                                    <i class="fas
+                                                        {% if journey.status == 'on_time' %}fa-check-circle
+                                                        {% elif journey.status == 'delayed' %}fa-clock
+                                                        {% else %}fa-times-circle{% endif %}
+                                                        mr-1"></i>
+                                                    {{ journey.status|replace('_', ' ')|title }}
+                                                </span>
+                                            </div>
+                                            <div class="text-sm text-gray-500 mt-1">
+                                                {{ journey.duration }} min • {{ journey.type|upper }} • {{ journey.sections|length }} correspondances
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-medium">
+                                                {% if journey.price %}{{ journey.price }} €{% else %}Gratuit{% endif %}
+                                            </span>
+                                            <button class="p-1.5 rounded-full text-gray-500 hover:bg-gray-100 transition-colors">
+                                                <i class="fas fa-ellipsis-h"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-3 pt-3 border-t border-gray-100">
+                                        <div class="text-sm font-medium text-gray-700 mb-2">Détails du trajet</div>
+                                        <div class="space-y-2">
+                                            {% for section in journey.sections %}
+                                                <div class="flex items-center gap-2 text-sm">
+                                                    <div class="w-8 h-8 rounded-full
+                                                        {% if section.type == 'train' %}bg-blue-100
+                                                        {% elif section.type == 'metro' %}bg-purple-100
+                                                        {% else %}bg-green-100{% endif %}
+                                                        flex items-center justify-center">
+                                                        <i class="fas
+                                                            {% if section.type == 'train' %}fa-train text-blue-600
+                                                            {% elif section.type == 'metro' %}fa-subway text-purple-600
+                                                            {% else %}fa-bus text-green-600{% endif %}
+                                                            text-xs"></i>
+                                                    </div>
+                                                    <div class="flex-1">
+                                                        <div class="font-medium">
+                                                            {{ section.from }} → {{ section.to }}
+                                                            <span class="text-gray-500">({{ section.duration }} min)</span>
+                                                        </div>
+                                                        <div class="text-gray-500">
+                                                            {% if section.type == 'train' %}Train
+                                                            {% elif section.type == 'metro' %}Métro ligne {{ section.line|default('') }}
+                                                            {% else %}Bus {{ section.line|default('') }}{% endif %}
+                                                            {% if section.platform %}• Quai {{ section.platform }}{% endif %}
+                                                        </div>
+                                                    </div>
+                                                    {% if section.status %}
+                                                        <span class="text-xs
+                                                            {% if section.status == 'on_time' %}text-green-600
+                                                            {% elif section.status == 'delayed' %}text-yellow-600
+                                                            {% else %}text-red-600{% endif %}">
+                                                            <i class="fas
+                                                                {% if section.status == 'on_time' %}fa-check-circle
+                                                                {% elif section.status == 'delayed' %}fa-clock
+                                                                {% else %}fa-exclamation-circle{% endif %}
+                                                                mr-1"></i>
+                                                            {{ section.status|replace('_', ' ')|title }}
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-12 text-gray-400">
+                                    <i class="fas fa-train fa-3x mb-4"></i>
+                                    <div class="text-lg font-medium mb-2">Aucun trajet trouvé</div>
+                                    <p class="max-w-md mx-auto">Effectuez une recherche pour voir les trajets disponibles</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Commerces -->
+                <div id="shops" class="tab {% if active_tab == 'shops' %}active{% else %}hidden{% endif %}">
+                    <div class="glass p-6 rounded-xl shadow-sm">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-gray-800">Commerces de Proximité</h2>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">
+                                    {{ nearby_shops|length }} résultats
+                                </span>
+                                <button id="shops-locate" class="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-location-arrow"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Barre de recherche -->
+                        <div class="glass p-4 rounded-lg mb-6">
+                            <div class="flex gap-2 mb-4">
+                                <div class="flex-1 relative">
+                                    <input id="shops-search" placeholder="Rechercher un commerce, service ou restaurant..."
+                                           class="form-input w-full pr-10">
+                                    <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                        <i class="fas fa-search"></i>
+                                    </div>
+                                </div>
+                                <button id="shops-search-btn" class="btn btn-primary action-btn">
+                                    <i class="fas fa-search mr-2"></i> Rechercher
+                                </button>
+                            </div>
+
+                            <div class="flex gap-2 flex-wrap">
+                                <select id="shops-category" class="form-input">
+                                    <option value="all">Tous types</option>
+                                    <option value="restaurant">Restaurants</option>
+                                    <option value="cafe">Cafés</option>
+                                    <option value="shop">Magasins</option>
+                                    <option value="service">Services</option>
+                                    <option value="health">Santé</option>
+                                </select>
+                                <select id="shops-rating" class="form-input">
+                                    <option value="all">Toutes notes</option>
+                                    <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+                                    <option value="4">⭐⭐⭐⭐ & plus</option>
+                                    <option value="3">⭐⭐⭐ & plus</option>
+                                </select>
+                                <select id="shops-distance" class="form-input">
+                                    <option value="all">Toutes distances</option>
+                                    <option value="500">500 m</option>
+                                    <option value="1000">1 km</option>
+                                    <option value="2000">2 km</option>
+                                </select>
+                                <button id="shops-apply-filters" class="btn btn-primary">
+                                    <i class="fas fa-filter mr-2"></i> Appliquer
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Résultats des commerces -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="shops-results">
+                            {% for shop in nearby_shops %}
+                                <div class="glass p-4 rounded-lg transition-all hover:shadow-md">
+                                    {% if shop.featured %}
+                                        <div class="absolute top-2 right-2">
+                                            <span class="badge bg-blue-100 text-blue-800">⭐ Partenaire</span>
+                                        </div>
+                                    {% endif %}
+                                    <div class="relative h-32 rounded-lg mb-3 overflow-hidden">
+                                        {% if shop.image %}
+                                            <img src="{{ shop.image }}" alt="{{ shop.name }}" class="w-full h-full object-cover">
+                                        {% else %}
+                                            <div class="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+                                                <div class="text-2xl text-blue-200">{{ shop.name[0] }}</div>
+                                            </div>
+                                        {% endif %}
+                                        {% if shop.is_open %}
+                                            <div class="absolute top-2 left-2 badge bg-green-100 text-green-800">OUVERT</div>
+                                        {% else %}
+                                            <div class="absolute top-2 left-2 badge bg-gray-200 text-gray-700">FERMÉ</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="font-bold text-gray-800 mb-0.5">{{ shop.name }}</div>
+                                        <div class="text-sm text-gray-500 capitalize">{{ shop.type|default('Commerce') }}</div>
+                                    </div>
+                                    <div class="flex items-center gap-1 mb-2">
+                                        <div class="flex items-center text-yellow-500">
+                                            {% for i in range(5) %}
+                                                {% if i < shop.rating|int %}
+                                                    <i class="fas fa-star"></i>
+                                                {% else %}
+                                                    <i class="far fa-star text-gray-300"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        <span class="text-sm text-gray-500">({{ shop.reviews|default(0) }} avis)</span>
+                                    </div>
+                                    <div class="text-sm text-gray-500 mb-3">
+                                        <i class="fas fa-map-marker-alt mr-1"></i>
+                                        {{ shop.distance|default('') }} • {{ shop.address }}
+                                    </div>
+                                    <div class="flex gap-1 flex-wrap">
+                                        {% for tag in shop.tags|default([]) %}
+                                            <span class="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full">{{ tag }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="mt-3 flex gap-2">
+                                        {% if shop.phone %}
+                                            <a href="tel:{{ shop.phone }}" class="btn btn-secondary flex-1 text-sm py-1.5">
+                                                <i class="fas fa-phone-alt mr-1"></i> Appeler
+                                            </a>
+                                        {% endif %}
+                                        <button class="btn btn-primary flex-1 text-sm py-1.5" data-shop-id="{{ shop.id }}">
+                                            <i class="fas fa-info-circle mr-1"></i> Détails
+                                        </button>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="col-span-full text-center py-12 text-gray-400">
+                                    <i class="fas fa-store-alt fa-3x mb-4"></i>
+                                    <div class="text-lg font-medium mb-2">Aucun commerce trouvé</div>
+                                    <p class="max-w-md mx-auto">Ajustez vos filtres ou élargissez votre zone de recherche</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Carte Interactive -->
+                <div id="map" class="tab {% if active_tab == 'map' %}active{% else %}hidden{% endif %}">
+                    <div class="glass p-6 rounded-xl shadow-sm h-[calc(100vh-120px)]">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-bold text-gray-800">Carte Interactive de Massy</h2>
+                            <div class="flex gap-2">
+                                <button id="map-locate-me" class="btn btn-secondary">
+                                    <i class="fas fa-location-crosshairs mr-2"></i> Me localiser
+                                </button>
+                                <button id="map-fullscreen" class="btn btn-secondary">
+                                    <i class="fas fa-expand mr-2"></i> Plein écran
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2 mb-4 flex-wrap">
+                            <button id="map-show-shops" class="btn btn-secondary bg-blue-50 hover:bg-blue-100 text-blue-600">
+                                <i class="fas fa-store mr-2"></i> Commerces
+                            </button>
+                            <button id="map-show-transport" class="btn btn-secondary bg-indigo-50 hover:bg-indigo-100 text-indigo-600">
+                                <i class="fas fa-train-subway mr-2"></i> Transports
+                            </button>
+                            {% if current_user and current_user.role == 'police' %}
+                                <button id="map-show-alerts" class="btn btn-secondary bg-red-50 hover:bg-red-100 text-red-600">
+                                    <i class="fas fa-triangle-exclamation mr-2"></i> Alertes
+                                </button>
+                            {% endif %}
+                        </div>
+
+                        <div id="map-container" class="w-full h-full rounded-lg relative"></div>
+
+                        <!-- Légende de la carte -->
+                        <div id="map-legend" class="map-legend absolute bottom-4 right-4">
+                            <h4 class="font-bold mb-2 text-gray-700">Légende</h4>
+                            <div class="flex items-center gap-3 mb-2">
+                                <div class="flex items-center gap-1.5">
+                                    <i class="fas fa-store text-blue-500"></i>
+                                    <span class="text-sm">Commerces</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <i class="fas fa-train text-indigo-500"></i>
+                                    <span class="text-sm">Gares SNCF</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <i class="fas fa-subway text-purple-500"></i>
+                                    <span class="text-sm">Métro/RER</span>
+                                </div>
+                            </div>
+                            {% if current_user and current_user.role == 'police' %}
+                                <div class="flex items-center gap-1.5">
+                                    <i class="fas fa-triangle-exclamation text-red-500 animate-pulse"></i>
+                                    <span class="text-sm">Alertes sécurité</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sécurité Publique (Police) -->
+                {% if current_user and current_user.role == 'police' %}
+                    <div id="police" class="tab {% if active_tab == 'police' %}active{% else %}hidden{% endif %}">
+                        <div class="glass p-6 rounded-xl shadow-sm">
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-2xl font-bold text-gray-800">Sécurité Publique — Outils Police Nationale</h2>
+                                <span id="police-realtime-badge" class="badge bg-red-100 text-red-800 hidden">
+                                    <i class="fas fa-signal mr-1"></i> Surveillance active
+                                </span>
+                            </div>
+
+                            <!-- Actions rapides -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                                <button id="police-detect-suspects" class="glass p-5 rounded-xl bg-red-50 hover:bg-red-100 transition-all">
+                                    <div class="flex flex-col items-center text-center">
+                                        <i class="fas fa-search-plus text-red-500 text-3xl mb-3"></i>
+                                        <h3 class="font-bold mb-1">Détection Avancée</h3>
+                                        <p class="text-sm text-gray-600">Analyse des comportements suspects</p>
+                                    </div>
+                                </button>
+                                <button id="police-optimize-patrols" class="glass p-5 rounded-xl bg-amber-50 hover:bg-amber-100 transition-all">
+                                    <div class="flex flex-col items-center text-center">
+                                        <i class="fas fa-route text-amber-500 text-3xl mb-3"></i>
+                                        <h3 class="font-bold mb-1">Patrouilles</h3>
+                                        <p class="text-sm text-gray-600">Optimisation des itinéraires</p>
+                                    </div>
+                                </button>
+                                <button id="police-emergency-alert" class="glass p-5 rounded-xl bg-purple-50 hover:bg-purple-100 transition-all">
+                                    <div class="flex flex-col items-center text-center">
+                                        <i class="fas fa-bell text-purple-500 text-3xl mb-3"></i>
+                                        <h3 class="font-bold mb-1">Alerte Urgence</h3>
+                                        <p class="text-sm text-gray-600">Déclenchement d'alerte générale</p>
+                                    </div>
+                                </button>
+                                <button id="police-report" class="glass p-5 rounded-xl bg-blue-50 hover:bg-blue-100 transition-all">
+                                    <div class="flex flex-col items-center text-center">
+                                        <i class="fas fa-file-alt text-blue-500 text-3xl mb-3"></i>
+                                        <h3 class="font-bold mb-1">Rapport</h3>
+                                        <p class="text-sm text-gray-600">Génération de rapports</p>
+                                    </div>
+                                </button>
+                            </div>
+
+                            <!-- Filtres et alertes -->
+                            <div class="glass p-5 rounded-xl mb-6">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-bold text-gray-700">Alertes en temps réel</h3>
+                                    <div class="flex gap-2">
+                                        <button id="police-toggle-realtime" class="btn btn-secondary">
+                                            <i class="fas fa-signal mr-2"></i> Activer surveillance
+                                        </button>
+                                        <button id="police-refresh" class="btn btn-secondary">
+                                            <i class="fas fa-sync-alt mr-2"></i> Actualiser
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                                    <select id="police-alert-type" class="form-input">
+                                        <option value="all">Tous types</option>
+                                        <option value="suspicious_behavior">Comportement suspect</option>
+                                        <option value="theft">Vol à la tire</option>
+                                        <option value="aggression">Agression</option>
+                                        <option value="abandoned_object">Objet abandonné</option>
+                                        <option value="traffic_violation">Infraction routière</option>
+                                    </select>
+                                    <select id="police-alert-risk" class="form-input">
+                                        <option value="all">Tous niveaux</option>
+                                        <option value="high">Élevé (8-10)</option>
+                                        <option value="medium">Moyen (5-7)</option>
+                                        <option value="low">Faible (1-4)</option>
+                                    </select>
+                                    <select id="police-alert-status" class="form-input">
+                                        <option value="all">Tous statuts</option>
+                                        <option value="open">Ouvert</option>
+                                        <option value="in_progress">En cours</option>
+                                        <option value="resolved">Résolu</option>
+                                    </select>
+                                    <button id="police-apply-filters" class="btn btn-primary">
+                                        <i class="fas fa-filter mr-2"></i> Appliquer filtres
+                                    </button>
+                                </div>
+
+                                <!-- Liste des alertes -->
+                                <div class="space-y-3 max-h-[400px] overflow-y-auto scrollbar" id="police-alerts-list">
+                                    {% for alert in police_alerts %}
+                                        <div class="glass p-4 rounded-lg border-l-4
+                                            {% if alert.risk_level > 7 %}border-red-500
+                                            {% elif alert.risk_level > 4 %}border-amber-500
+                                            {% else %}border-gray-300{% endif %}">
+                                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-10 h-10 rounded-full
+                                                        {% if alert.type == 'suspicious_behavior' %}bg-red-100
+                                                        {% elif alert.type == 'theft' %}bg-amber-100
+                                                        {% elif alert.type == 'aggression' %}bg-purple-100
+                                                        {% else %}bg-gray-100{% endif %}
+                                                        flex items-center justify-center">
+                                                        <i class="fas
+                                                            {% if alert.type == 'suspicious_behavior' %}fa-search-plus text-red-600
+                                                            {% elif alert.type == 'theft' %}fa-hand-holding-usd text-amber-600
+                                                            {% elif alert.type == 'aggression' %}fa-fist-raised text-purple-600
+                                                            {% elif alert.type == 'abandoned_object' %}fa-box-open text-gray-600
+                                                            {% else %}fa-exclamation-triangle text-gray-600{% endif %}
+                                                            text-lg"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="font-bold
+                                                            {% if alert.risk_level > 7 %}text-red-500
+                                                            {% elif alert.risk_level > 4 %}text-amber-500
+                                                            {% else %}text-gray-700{% endif %}">
+                                                            {{ alert.type|replace('_', ' ')|title }}
+                                                        </div>
+                                                        <div class="text-sm text-gray-500 mt-0.5">
+                                                            {{ alert.description|truncate(50) }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                                                    <div class="text-sm text-gray-500">
+                                                        <i class="fas fa-clock mr-1"></i>
+                                                        {{ alert.reported_at.strftime('%d/%m %H:%M') }}
+                                                    </div>
+                                                    <span class="badge
+                                                        {% if alert.risk_level > 7 %}bg-red-100 text-red-800
+                                                        {% elif alert.risk_level > 4 %}bg-amber-100 text-amber-800
+                                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                        Niveau {{ alert.risk_level }}
+                                                    </span>
+                                                    <button class="p-1.5 rounded-full text-blue-600 hover:bg-blue-50 transition-colors map-locate-btn"
+                                                            data-lat="{{ alert.lat|default(48.735) }}"
+                                                            data-lng="{{ alert.lng|default(2.29) }}">
+                                                        <i class="fas fa-map-marker-alt"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-2">
+                                                {% for tag in alert.tags|default([]) %}
+                                                    <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">{{ tag }}</span>
+                                                {% endfor %}
+                                                <span class="px-2 py-0.5
+                                                    {% if alert.status == 'open' %}bg-red-100 text-red-800
+                                                    {% elif alert.status == 'in_progress' %}bg-blue-100 text-blue-800
+                                                    {% else %}bg-green-100 text-green-800{% endif %}
+                                                    text-xs rounded-full ml-auto">
+                                                    {{ alert.status|replace('_', ' ')|title }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-12 text-gray-400">
+                                            <i class="fas fa-shield-alt fa-3x mb-4"></i>
+                                            <div class="text-lg font-medium mb-2">Aucune alerte récente</div>
+                                            <p class="max-w-md mx-auto">Le secteur est calme. Les patrouilles continuent leur surveillance.</p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Statistiques et graphiques -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="glass p-5 rounded-xl">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h3 class="font-bold text-gray-700">Statistiques Criminalité (30 jours)</h3>
+                                        <select id="crime-stats-period" class="form-input w-auto">
+                                            <option value="7">7 jours</option>
+                                            <option value="30" selected>30 jours</option>
+                                            <option value="90">90 jours</option>
+                                        </select>
+                                    </div>
+                                    <div class="chart-container">
+                                        <canvas id="crime-stats-chart"></canvas>
+                                    </div>
+                                </div>
+
+                                <div class="glass p-5 rounded-xl">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h3 class="font-bold text-gray-700">Répartition des Risques</h3>
+                                        <div class="flex gap-2">
+                                            <button id="risk-distribution-export" class="btn btn-secondary text-sm py-1.5 px-2">
+                                                <i class="fas fa-file-export mr-1"></i> Exporter
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="chart-container">
+                                        <canvas id="risk-distribution-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Carte des alertes intégrée -->
+                            <div class="glass p-5 rounded-xl mt-6">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-bold text-gray-700">Carte des Alertes en Temps Réel</h3>
+                                    <div class="flex gap-2">
+                                        <button id="alerts-map-fullscreen" class="btn btn-secondary">
+                                            <i class="fas fa-expand mr-2"></i> Plein écran
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="alerts-map-container" class="h-96 rounded-lg bg-gray-100"></div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Recherche Universitaire -->
+                {% if current_user and current_user.role == 'university' %}
+                    <div id="university" class="tab {% if active_tab == 'university' %}active{% else %}hidden{% endif %}">
+                        <div class="glass p-6 rounded-xl shadow-sm">
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-2xl font-bold text-gray-800">Recherche Universitaire — Plateforme Data</h2>
+                                <div class="flex items-center gap-4">
+                                    <span id="research-saved-badge" class="badge bg-green-100 text-green-800 hidden">
+                                        <i class="fas fa-save mr-1"></i> Enregistré
+                                    </span>
+                                    <button id="research-help" class="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors">
+                                        <i class="fas fa-question-circle"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Outil de recherche principal -->
+                            <div class="glass p-5 rounded-xl mb-6">
+                                <div class="flex flex-col md:flex-row gap-4 mb-4">
+                                    <div class="flex-1">
+                                        <label for="research-query" class="block text-sm font-medium text-gray-700 mb-1">Requête de recherche</label>
+                                        <input id="research-query" placeholder="Ex: Impact économique des nouveaux transports sur Massy..."
+                                               class="form-input w-full">
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button id="research-submit" class="btn btn-primary flex-1 h-full">
+                                            <i class="fas fa-search mr-2"></i> Rechercher
+                                        </button>
+                                        <button id="research-advanced" class="btn btn-secondary h-full">
+                                            <i class="fas fa-sliders-h mr-2"></i> Avancé
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Filtres avancés -->
+                                <div id="research-filters" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4 hidden">
+                                    <select id="research-domain" class="form-input">
+                                        <option value="">Tous domaines</option>
+                                        <option value="transport">Transports</option>
+                                        <option value="economie">Économie</option>
+                                        <option value="sociologie">Sociologie</option>
+                                        <option value="urbanisme">Urbanisme</option>
+                                        <option value="environnement">Environnement</option>
+                                        <option value="securite">Sécurité</option>
+                                    </select>
+                                    <select id="research-period" class="form-input">
+                                        <option value="all">Toutes périodes</option>
+                                        <option value="1year">1 an</option>
+                                        <option value="5years">5 ans</option>
+                                        <option value="10years">10 ans</option>
+                                        <option value="custom">Personnalisé</option>
+                                    </select>
+                                    <select id="research-data-source" class="form-input">
+                                        <option value="all">Toutes sources</option>
+                                        <option value="insee">INSEE</option>
+                                        <option value="ratp">RATP/SNCF</option>
+                                        <option value="openstreetmap">OpenStreetMap</option>
+                                        <option value="enquetes">Enquêtes locales</option>
+                                        <option value="satellite">Imagerie satellite</option>
+                                    </select>
+                                    <select id="research-data-type" class="form-input">
+                                        <option value="all">Tous types</option>
+                                        <option value="quantitative">Quantitatif</option>
+                                        <option value="qualitative">Qualitatif</option>
+                                        <option value="geospatial">Géospatial</option>
+                                        <option value="temporal">Temporel</option>
+                                    </select>
+                                </div>
+
+                                <!-- Options supplémentaires -->
+                                <div class="flex flex-wrap gap-3 mb-4">
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" id="research-include-historical" class="rounded text-blue-600 focus:ring-blue-500">
+                                        <label for="research-include-historical" class="text-sm font-medium text-gray-700">Inclure données historiques</label>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" id="research-include-projections" class="rounded text-blue-600 focus:ring-blue-500">
+                                        <label for="research-include-projections" class="text-sm font-medium text-gray-700">Inclure projections</label>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" id="research-include-comparative" class="rounded text-blue-600 focus:ring-blue-500">
+                                        <label for="research-include-comparative" class="text-sm font-medium text-gray-700">Analyse comparative</label>
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="flex gap-2">
+                                    <button id="research-save" class="btn btn-secondary flex-1">
+                                        <i class="fas fa-save mr-2"></i> Enregistrer
+                                    </button>
+                                    <button id="research-export" class="btn btn-secondary flex-1">
+                                        <i class="fas fa-file-export mr-2"></i> Exporter
+                                    </button>
+                                    <button id="research-share" class="btn btn-secondary flex-1">
+                                        <i class="fas fa-share-alt mr-2"></i> Partager
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Résultats de recherche -->
+                            <div class="glass p-5 rounded-xl mb-6">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-bold text-gray-700">Résultats de recherche</h3>
+                                    <div class="flex items-center gap-4">
+                                        <span class="text-sm text-gray-500">
+                                            {{ research_results|length }} résultats trouvés
+                                        </span>
+                                        <select id="research-sort" class="form-input w-auto">
+                                            <option value="relevance">Pertinence</option>
+                                            <option value="date">Date</option>
+                                            <option value="popularity">Popularité</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div id="research-results" class="space-y-4 max-h-[500px] overflow-y-auto scrollbar">
+                                    {% for result in research_results %}
+                                        <div class="glass p-4 rounded-lg hover:shadow-md transition-all">
+                                            <div class="flex justify-between items-start gap-4">
+                                                <div class="flex-1">
+                                                    <div class="font-bold text-gray-800 mb-1">{{ result.title|default('Recherche sans titre') }}</div>
+                                                    <div class="text-sm text-gray-600 mb-2 line-clamp-2">
+                                                        {{ result.summary|default('Aucun résumé disponible') }}
+                                                    </div>
+                                                    <div class="flex gap-1 flex-wrap mb-3">
+                                                        {% for tag in result.tags|default([]) %}
+                                                            <span class="px-2 py-0.5 bg-green-100 text-green-600 text-xs rounded-full">{{ tag }}</span>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                                <div class="text-right">
+                                                    <div class="text-sm text-gray-500 mb-2">
+                                                        <i class="fas fa-database mr-1"></i>
+                                                        {{ result.data_points|default(0) }} données
+                                                    </div>
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="text-xs
+                                                            {% if result.trend == 'positive' %}text-green-600
+                                                            {% elif result.trend == 'neutral' %}text-yellow-600
+                                                            {% else %}text-red-600{% endif %}">
+                                                            <i class="fas fa-chart-line
+                                                                {% if result.trend == 'positive' %}text-green-500
+                                                                {% elif result.trend == 'neutral' %}text-yellow-500
+                                                                {% else %}text-red-500{% endif %}
+                                                                mr-1"></i>
+                                                            {{ result.trend|default('neutral')|replace('_', ' ')|title }}
+                                                        </span>
+                                                        <span class="text-xs text-gray-500">
+                                                            {{ result.created_at.strftime('%d/%m/%Y') if result.created_at else 'Date inconnue' }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="border-t border-gray-100 pt-3 mt-3">
+                                                <div class="flex gap-2">
+                                                    <button class="btn btn-secondary text-sm py-1 px-3">
+                                                        <i class="fas fa-chart-bar mr-1"></i> Visualiser
+                                                    </button>
+                                                    <button class="btn btn-secondary text-sm py-1 px-3">
+                                                        <i class="fas fa-download mr-1"></i> Télécharger
+                                                    </button>
+                                                    <button class="btn btn-secondary text-sm py-1 px-3">
+                                                        <i class="fas fa-share-alt mr-1"></i> Partager
+                                                    </button>
+                                                    <button class="btn btn-secondary text-sm py-1 px-3 ml-auto">
+                                                        <i class="fas fa-bookmark mr-1"></i> Enregistrer
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-12 text-gray-400">
+                                            <i class="fas fa-microscope fa-3x mb-4"></i>
+                                            <div class="text-lg font-medium mb-2">Aucun résultat de recherche</div>
+                                            <p class="max-w-md mx-auto">Effectuez une recherche pour voir les résultats. Utilisez des termes précis pour obtenir les meilleurs résultats.</p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Visualisations de données -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="glass p-5 rounded-xl">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h3 class="font-bold text-gray-700">Analyse des Données Urbaines</h3>
+                                        <div class="flex gap-2">
+                                            <button class="btn btn-secondary text-sm py-1 px-2">
+                                                <i class="fas fa-file-export mr-1"></i> Exporter
+                                            </button>
+                                            <button class="btn btn-secondary text-sm py-1 px-2">
+                                                <i class="fas fa-share-alt mr-1"></i> Partager
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="chart-container">
+                                        <canvas id="urban-data-chart"></canvas>
+                                    </div>
+                                </div>
+
+                                <div class="glass p-5 rounded-xl">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h3 class="font-bold text-gray-700">Tendances de Recherche</h3>
+                                        <select id="research-trends-period" class="form-input w-auto">
+                                            <option value="30">30 jours</option>
+                                            <option value="90">90 jours</option>
+                                            <option value="365">1 an</option>
+                                            <option value="all">Tous</option>
+                                        </select>
+                                    </div>
+                                    <div class="chart-container">
+                                        <canvas id="research-trends-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Projets de recherche récents -->
+                            <div class="glass p-5 rounded-xl">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-bold text-gray-700">Mes Projets de Recherche</h3>
+                                    <button id="new-research-project" class="btn btn-primary">
+                                        <i class="fas fa-plus mr-2"></i> Nouveau projet
+                                    </button>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {% for project in university_projects %}
+                                        <div class="glass p-4 rounded-lg hover:shadow-md transition-all">
+                                            <div class="flex justify-between items-start mb-3">
+                                                <div>
+                                                    <div class="font-bold text-gray-800 mb-1">{{ project.title|default('Nouveau projet')|truncate(30) }}</div>
+                                                    <div class="text-sm text-gray-500 line-clamp-2">
+                                                        {{ project.description|default('Aucune description')|truncate(60) }}
+                                                    </div>
+                                                </div>
+                                                <div class="text-right">
+                                                    <div class="badge
+                                                        {% if project.status == 'completed' %}bg-green-100 text-green-800
+                                                        {% elif project.status == 'in_progress' %}bg-blue-100 text-blue-800
+                                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                        {{ project.status|default('new')|replace('_', ' ')|title }}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="border-t border-gray-100 pt-3">
+                                                <div class="flex justify-between items-center">
+                                                    <div class="text-xs text-gray-500">
+                                                        <i class="fas fa-calendar-alt mr-1"></i>
+                                                        {{ project.created_at.strftime('%d/%m/%Y') if project.created_at else 'Date inconnue' }}
+                                                    </div>
+                                                    <div class="flex gap-1">
+                                                        {% if project.collaborators %}
+                                                            {% for collaborator in project.collaborators|slice(3) %}
+                                                                <div class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs -ml-1 border-2 border-white">
+                                                                    {{ collaborator[0]|upper }}
+                                                                </div>
+                                                            {% endfor %}
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="col-span-full text-center py-12 text-gray-400">
+                                            <i class="fas fa-folder-open fa-3x mb-4"></i>
+                                            <div class="text-lg font-medium mb-2">Aucun projet de recherche</div>
+                                            <p class="max-w-md mx-auto">Créez votre premier projet de recherche pour commencer à analyser les données urbaines de Massy</p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Actualités -->
+                <div id="news" class="tab {% if active_tab == 'news' %}active{% else %}hidden{% endif %}">
+                    <div class="glass p-6 rounded-xl shadow-sm">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-gray-800">Actualités Nationales & Locales</h2>
+                            <div class="flex items-center gap-2">
+                                <select id="news-category" class="form-input w-auto">
+                                    <option value="all">Toutes catégories</option>
+                                    <option value="local">Locales (Massy)</option>
+                                    <option value="national">Nationales</option>
+                                    <option value="transport">Transports</option>
+                                    <option value="security">Sécurité</option>
+                                    <option value="economie">Économie</option>
+                                    <option value="urbanisme">Urbanisme</option>
+                                </select>
+                                <button id="news-refresh" class="btn btn-secondary">
+                                    <i class="fas fa-sync-alt mr-2"></i> Actualiser
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Liste des actualités -->
+                        <div class="space-y-4" id="news-list">
+                            {% for news in news_items %}
+                                <div class="glass p-5 rounded-xl hover:shadow-md transition-all">
+                                    <div class="flex flex-col md:flex-row gap-4">
+                                        {% if news.image %}
+                                            <div class="md:w-48 h-32 rounded-lg overflow-hidden shrink-0">
+                                                <img src="{{ news.image }}" alt="{{ news.title }}" class="w-full h-full object-cover">
+                                            </div>
+                                        {% endif %}
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <span class="badge
+                                                    {% if news.category == 'local' %}bg-blue-100 text-blue-800
+                                                    {% elif news.category == 'national' %}bg-red-100 text-red-800
+                                                    {% elif news.category == 'security' %}bg-amber-100 text-amber-800
+                                                    {% elif news.category == 'transport' %}bg-indigo-100 text-indigo-800
+                                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                    {% if news.category == 'local' %}Massy
+                                                    {% elif news.category == 'national' %}France
+                                                    {% else %}{{ news.category|title }}{% endif %}
+                                                </span>
+                                                <span class="text-sm text-gray-500">
+                                                    {{ news.date.strftime('%d %B %Y') if news.date else 'Date inconnue' }}
+                                                </span>
+                                            </div>
+                                            <h3 class="font-bold text-gray-800 text-lg mb-2">{{ news.title|default('Titre inconnu') }}</h3>
+                                            <p class="text-gray-600 mb-3 line-clamp-3">
+                                                {{ news.content|default('Aucun contenu disponible') }}
+                                            </p>
+                                            <div class="flex flex-wrap gap-2">
+                                                {% for tag in news.tags|default([]) %}
+                                                    <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">{{ tag }}</span>
+                                                {% endfor %}
+                                                {% if news.source %}
+                                                    <span class="text-xs text-gray-500 ml-auto">
+                                                        Source: {{ news.source|default('Inconnue') }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-12 text-gray-400">
+                                    <i class="fas fa-newspaper fa-3x mb-4"></i>
+                                    <div class="text-lg font-medium mb-2">Aucune actualité disponible</div>
+                                    <p class="max-w-md mx-auto">Les actualités seront affichées ici lorsqu'elles seront disponibles. Veuillez actualiser plus tard.</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer Officiel -->
+    <footer class="w-full p-4 text-center text-xs text-gray-500 border-t border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <a href="{{ url_for('frontend.index') }}" class="flex flex-col items-center gap-1">
+                        <svg class="france-flag" viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg" width="20" height="13">
+                            <rect width="1" height="2" x="0" fill="#0055A4"/>
+                            <path d="M0.3 0.8L0.3 1.5L0.6 1.5L0.6 0.8L0.9 0.8L0.9 1.8L0.5 1.3L0.1 1.8L0.1 0.8Z" fill="white" transform="translate(0.2, 0.2) scale(0.5)"/>
+                            <rect width="1" height="2" x="1" fill="#FFFFFF"/>
+                            <rect width="1" height="2" x="2" fill="#EF4135"/>
+                        </svg>
+                        <span>
+                            Massy IA — Plateforme Ultra-Pro pour la France |
+                            <a href="https://www.gouvernement.fr" class="text-blue-600 hover:underline" target="_blank">Partenaire Officiel</a>
+                        </span>
+                    </a>
+                </div>
+                <div class="flex gap-4">
+                    <a href="#" class="text-blue-600 hover:underline">Mentions légales</a>
+                    <a href="#" class="text-blue-600 hover:underline">Accessibilité</a>
+                    <a href="#" class="text-blue-600 hover:underline">Données personnelles</a>
+                    <a href="#" class="text-blue-600 hover:underline">Contact</a>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-200 text-center text-gray-400">
+                <p>© {{ datetime.now().year }} République Française - Tous droits réservés</p>
+                <p class="text-xs mt-1">Version 1.0.0 - Plateforme certifiée par l'État</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Configuration globale
+        const APP_CONFIG = {
+            API_BASE: '/api',
+            MAP_CENTER: [48.735, 2.29],  // Coordonnées de Massy
+            DEFAULT_ZOOM: 14,
+            MAX_ZOOM: 19,
+            POLLING_INTERVAL: 30000,
+            ANIMATION_DURATION: 300,
+            DEBOUNCE_DELAY: 300,
+            MAX_RETRIES: 3,
+            ROLES: {
+                POLICE: 'police',
+                UNIVERSITY: 'university',
+                CITIZEN: 'citizen'
+            }
+        };
+
+        // État de l'application
+        const appState = {
+            currentUser: {
+                id: "{{ current_user.id if current_user else '' }}",
+                username: "{{ current_user.username if current_user else '' }}",
+                role: "{{ current_user.role if current_user else '' }}",
+                firstName: "{{ current_user.first_name if current_user else '' }}",
+                lastName: "{{ current_user.last_name if current_user else '' }}",
+                email: "{{ current_user.email if current_user else '' }}",
+                isAuthenticated: {{ 'true' if current_user else 'false' }},
+                isAdmin: {{ 'true' if current_user and current_user.role == 'admin' else 'false' }}
+            },
+            authToken: localStorage.getItem('authToken'),
+            activeTab: "{{ active_tab|default('dashboard') }}",
+            map: null,
+            realtimeIntervals: {},
+            chartInstances: {}
+        };
+
+        // Initialisation au chargement
+        document.addEventListener('DOMContentLoaded', function() {
+            // Activation de l'onglet courant
+            changeTab(appState.activeTab);
+
+            // Gestion des onglets
+            document.querySelectorAll('[data-tab], a[href*="tab="]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    if (this.tagName === 'A') {
+                        e.preventDefault();
+                        const url = new URL(this.href);
+                        const tabId = url.searchParams.get('tab');
+                        changeTab(tabId);
+
+                        // Mise à jour de l'URL sans rechargement
+                        const newUrl = new URL(window.location);
+                        newUrl.searchParams.set('tab', tabId);
+                        window.history.pushState({}, '', newUrl);
+                    }
+                });
+            });
+
+            // Initialisation de la carte si onglet map est actif
+            if (appState.activeTab === 'map') {
+                initMap();
+            }
+
+            // Gestion du chatbot
+            if (appState.activeTab === 'chatbot') {
+                initChatbot();
+            }
+        });
+
+        // Changement d'onglet
+        function changeTab(tabId) {
+            // Désactiver tous les onglets
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.add('hidden');
+                tab.classList.remove('active');
+            });
+
+            // Activer l'onglet sélectionné
+            const activeTab = document.getElementById(tabId);
+            if (activeTab) {
+                activeTab.classList.remove('hidden');
+                activeTab.classList.add('active');
+                appState.activeTab = tabId;
+
+                // Initialiser les fonctionnalités spécifiques
+                if (tabId === 'map' && !appState.map) {
+                    initMap();
+                } else if (tabId === 'chatbot') {
+                    initChatbot();
+                } else if (tabId === 'transport') {
+                    initTransport();
+                } else if (tabId === 'shops') {
+                    initShops();
+                } else if (tabId === 'police' && appState.currentUser.role === 'police') {
+                    initPolice();
+                } else if (tabId === 'university' && appState.currentUser.role === 'university') {
+                    initUniversity();
+                }
+            }
+        }
+
+        // Initialisation de la carte
+        function initMap() {
+            if (appState.map) return;
+
+            appState.map = L.map('map-container').setView(APP_CONFIG.MAP_CENTER, APP_CONFIG.DEFAULT_ZOOM);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | © <a href="https://www.openstreetmap.fr/">OSM France</a>',
+                maxZoom: APP_CONFIG.MAX_ZOOM
+            }).addTo(appState.map);
+
+            // Ajouter des marqueurs d'exemple
+            L.marker([48.735, 2.29]).addTo(appState.map)
+                .bindPopup('Mairie de Massy')
+                .openPopup();
+
+            L.marker([48.730, 2.285]).addTo(appState.map)
+                .bindPopup('Gare de Massy TGV');
+
+            // Contrôle de géolocalisation
+            L.control.locate({
+                position: 'topleft',
+                strings: {
+                    title: "Me localiser"
+                }
+            }).addTo(appState.map);
+        }
+
+   
+// chatbot
+function initChatbot() {
+    // Initialisation du chatbot
+    console.log("Chatbot initialisé");
+    // Charger les conversations existantes si connecté
+    if (appState.currentUser.isAuthenticated) {
+        loadConversations();
+    }
+} 
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const chatContainer = document.getElementById('chatbot'); // Conteneur principal
+    const chatMessages = document.getElementById('chat-messages'); // Zone messages
+    const chatInput = document.getElementById('chat-input'); // Champ de saisie
+    const chatSend = document.getElementById('chat-send'); // Bouton envoyer
+    const chatHistoryBtn = document.getElementById('chat-history'); // Bouton Historique
+    const chatExpertBtn = document.getElementById('chat-expert-mode'); // Bouton Mode Expert
+
+    let currentConversationId = null;
+
+    // Récupérer le token JWT
+    function getToken() {
+        return localStorage.getItem('access_token');
+    }
+
+    // Scroll automatique
+    function scrollToBottom() {
+        if(chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Ajouter un message
+    function addMessage(sender, content) {
+        if(!chatMessages) return;
+        const div = document.createElement('div');
+        div.className = `chat-message ${sender === 'user' ? 'chat-user' : 'chat-bot'}`;
+        div.innerHTML = `
+            <div class="chat-content">${content}</div>
+            <div class="chat-timestamp">${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+        `;
+        chatMessages.appendChild(div);
+        scrollToBottom();
+    }
+
+    // Envoyer un message
+    async function sendMessage() {
+        if(!chatInput) return;
+        const message = chatInput.value.trim();
+        if(!message) return;
+
+        chatInput.value = '';
+        addMessage('user', message);
+
+        const token = getToken();
+        if(!token) {
+            addMessage('bot', "Vous devez être connecté.");
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/chatbot/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ message })
+            });
+
+            const data = await res.json();
+
+            if(res.ok && data.data && data.data.response) {
+                addMessage('bot', data.data.response);
+                currentConversationId = data.data.conversation_id;
+            } else {
+                addMessage('bot', data.message || "Erreur lors de l'envoi");
+            }
+        } catch (err) {
+            addMessage('bot', "Erreur réseau : " + err.message);
+        }
+    }
+
+    // Charger toutes les conversations
+    async function loadConversations() {
+        const token = getToken();
+        if(!token) return;
+
+        try {
+            const res = await fetch('/api/chatbot/conversations', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+
+            if(res.ok && data.data) {
+                const convs = data.data.conversations;
+                if(convs.length > 0) {
+                    loadConversation(convs[0].id);
+                }
+            }
+        } catch(err) {
+            console.error("Erreur chargement conversations:", err);
+        }
+    }
+
+    // Charger une conversation spécifique
+    async function loadConversation(conversationId) {
+        const token = getToken();
+        if(!token) return;
+
+        try {
+            const res = await fetch(`/api/chatbot/conversations/${conversationId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+
+            if(res.ok && data.data && data.data.conversation) {
+                currentConversationId = conversationId;
+                chatMessages.innerHTML = '';
+                const messages = data.data.conversation.messages || [];
+                messages.forEach(msg => addMessage(msg.role === 'user' ? 'user' : 'bot', msg.content));
+            }
+        } catch(err) {
+            console.error("Erreur chargement conversation:", err);
+        }
+    }
+
+    // Gestion des événements
+    if(chatSend) chatSend.addEventListener('click', sendMessage);
+    if(chatInput) chatInput.addEventListener('keydown', e => {
+        if(e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    if(chatHistoryBtn) {
+        chatHistoryBtn.addEventListener('click', loadConversations);
+    }
+
+    if(chatExpertBtn) {
+        chatExpertBtn.addEventListener('click', () => {
+            alert("Mode Expert activé ! (fonctionnalité à implémenter selon ton backend)");
+        });
+    }
+
+    // Charger les conversations au chargement si connecté
+    if(getToken()) {
+        loadConversations();
+    }
+});
+
+
+
+
+
+        // Gestion des modals
+        document.querySelectorAll('[id$="-modal-open"]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const modalId = button.id.replace('-open', '');
+                document.getElementById(modalId).classList.add('active');
+            });
+        });
+
+        document.querySelectorAll('[id$="-modal-close"]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const modalId = button.id.replace('-close', '');
+                document.getElementById(modalId).classList.remove('active');
+            });
+        });
+
+        // Fermeture des modals par clic outside
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+
+        // transport 
+document.addEventListener("DOMContentLoaded", function () {
+    const resultsContainer = document.getElementById("transport-results");
+    const searchBtn = document.getElementById("transport-search");
+    const filtersContainer = document.getElementById("transport-filters");
+    const realtimeToggle = document.getElementById("transport-realtime-toggle");
+    const filtersToggle = document.getElementById("transport-filters-toggle");
+    let realtimeInterval = null;
+    let currentResults = [];
+
+    // Liens vers les sites officiels
+    const SNCF_URL = "https://www.sncf-connect.com/";
+    const RATP_URL = "https://www.ratp.fr/itineraires";
+
+    // =====================
+    // FETCH JOURNEYS
+    // =====================
+    async function fetchJourneys() {
+        const departure = document.getElementById("transport-departure").value.trim() || "Massy TGV";
+        const arrival = document.getElementById("transport-arrival").value.trim() || "Paris Gare de Lyon";
+        const type = document.getElementById("transport-type").value;
+
+        resultsContainer.innerHTML = `<div class="text-center py-6 text-gray-400">
+            <i class="fas fa-spinner fa-spin"></i> Chargement...</div>`;
+
+        try {
+            let journeys = [];
+
+            // Ajout des liens vers les sites officiels en haut des résultats
+            resultsContainer.innerHTML = `
+                <div class="glass p-4 rounded-lg mb-4 bg-blue-50">
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-train text-blue-600 mr-2"></i>
+                            <div>
+                                <div class="font-bold text-blue-800">Trajets en temps réel</div>
+                                <div class="text-sm text-blue-600">Consultez les horaires officiels</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="${SNCF_URL}" target="_blank" class="fr-btn fr-btn--sm fr-btn--secondary">
+                                <i class="fas fa-train mr-1"></i> SNCF Connect
+                            </a>
+                            <a href="${RATP_URL}" target="_blank" class="fr-btn fr-btn--sm fr-btn--secondary">
+                                <i class="fas fa-subway mr-1"></i> RATP Itinéraires
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center py-6 text-gray-400">
+                    <i class="fas fa-spinner fa-spin"></i> Chargement des trajets...
+                </div>
+            `;
+
+            // SNCF
+            if (type === "sncf" || type === "all") {
+                const res = await fetch(`/api/transport/sncf?departure=${encodeURIComponent(departure)}&arrival=${encodeURIComponent(arrival)}`);
+                const data = await res.json();
+                if (data.success && Array.isArray(data.data.journeys)) {
+                    journeys.push(...data.data.journeys.map(j => ({ ...j, status: normalizeStatus(j.status), source: 'sncf' })));
+                }
+            }
+
+            // RATP
+            if (type === "ratp" || type === "all") {
+                const res = await fetch(`/api/transport/ratp?departure=${encodeURIComponent(departure)}&arrival=${encodeURIComponent(arrival)}`);
+                const data = await res.json();
+                if (data.success && Array.isArray(data.data.journeys)) {
+                    journeys.push(...data.data.journeys.map(j => ({ ...j, status: normalizeStatus(j.status), source: 'ratp' })));
+                }
+            }
+
+            currentResults = journeys;
+            renderJourneys(journeys);
+        } catch (err) {
+            console.error("Erreur API transport:", err);
+            resultsContainer.innerHTML = `
+                <div class="glass p-4 rounded-lg mb-4 bg-blue-50">
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-train text-blue-600 mr-2"></i>
+                            <div>
+                                <div class="font-bold text-blue-800">Trajets en temps réel</div>
+                                <div class="text-sm text-blue-600">Consultez les horaires officiels</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="${SNCF_URL}" target="_blank" class="fr-btn fr-btn--sm fr-btn--secondary">
+                                <i class="fas fa-train mr-1"></i> SNCF Connect
+                            </a>
+                            <a href="${RATP_URL}" target="_blank" class="fr-btn fr-btn--sm fr-btn--secondary">
+                                <i class="fas fa-subway mr-1"></i> RATP Itinéraires
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center py-6 text-red-500">
+                    Erreur lors du chargement des trajets. Veuillez réessayer.
+                </div>
+            `;
+        }
+    }
+
+    // =====================
+    // STATUS NORMALIZER
+    // =====================
+    function normalizeStatus(status) {
+        const s = status.toLowerCase();
+        if (s.includes("ponctuel") || s === "on_time") return "on_time";
+        if (s.includes("perturbé") || s === "delayed") return "delayed";
+        if (s.includes("annulé") || s === "cancelled") return "cancelled";
+        return "on_time"; // fallback
+    }
+
+    // =====================
+    // RENDER JOURNEYS
+    // =====================
+    function renderJourneys(journeys) {
+        if (!journeys.length) {
+            resultsContainer.innerHTML = `
+                <div class="glass p-4 rounded-lg mb-4 bg-blue-50">
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-train text-blue-600 mr-2"></i>
+                            <div>
+                                <div class="font-bold text-blue-800">Trajets en temps réel</div>
+                                <div class="text-sm text-blue-600">Consultez les horaires officiels</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="${SNCF_URL}" target="_blank" class="fr-btn fr-btn--sm fr-btn--secondary">
+                                <i class="fas fa-train mr-1"></i> SNCF Connect
+                            </a>
+                            <a href="${RATP_URL}" target="_blank" class="fr-btn fr-btn--sm fr-btn--secondary">
+                                <i class="fas fa-subway mr-1"></i> RATP Itinéraires
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center py-12 text-gray-400">
+                    <i class="fas fa-train fa-3x mb-4"></i>
+                    <div class="text-lg font-medium mb-2">Aucun trajet trouvé</div>
+                    <p class="max-w-md mx-auto">Effectuez une recherche pour voir les trajets disponibles</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Conserver les liens en haut des résultats
+        const header = document.querySelector('.glass.p-4.rounded-lg.mb-4.bg-blue-50');
+        const tempContainer = document.createElement('div');
+        tempContainer.innerHTML = resultsContainer.innerHTML;
+        resultsContainer.innerHTML = header ? header.outerHTML : '';
+        if (!header) {
+            resultsContainer.innerHTML = `
+                <div class="glass p-4 rounded-lg mb-4 bg-blue-50">
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-train text-blue-600 mr-2"></i>
+                            <div>
+                                <div class="font-bold text-blue-800">Trajets en temps réel</div>
+                                <div class="text-sm text-blue-600">Consultez les horaires officiels</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="${SNCF_URL}" target="_blank" class="fr-btn fr-btn--sm fr-btn--secondary">
+                                <i class="fas fa-train mr-1"></i> SNCF Connect
+                            </a>
+                            <a href="${RATP_URL}" target="_blank" class="fr-btn fr-btn--sm fr-btn--secondary">
+                                <i class="fas fa-subway mr-1"></i> RATP Itinéraires
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        journeys.forEach(journey => {
+            const statusColor = journey.status === "on_time" ? "border-green-500" :
+                                journey.status === "delayed" ? "border-yellow-500" : "border-red-500";
+            const statusIcon = journey.status === "on_time" ? "fa-check-circle" :
+                               journey.status === "delayed" ? "fa-clock" : "fa-times-circle";
+            const statusText = journey.status.replace("_", " ").replace(/^\w/, c => c.toUpperCase());
+
+            const sourceInfo = journey.source === 'sncf' ?
+                `<div class="text-xs text-blue-600 mt-1">Source: SNCF Connect <a href="${SNCF_URL}" target="_blank" class="hover:underline"><i class="fas fa-external-link-alt"></i></a></div>` :
+                `<div class="text-xs text-purple-600 mt-1">Source: RATP <a href="${RATP_URL}" target="_blank" class="hover:underline"><i class="fas fa-external-link-alt"></i></a></div>`;
+
+            const sectionsHtml = journey.sections.map(section => `
+                <div class="flex items-center gap-2 text-sm">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center
+                        ${section.type === 'train' ? 'bg-blue-100' :
+                          section.type === 'metro' ? 'bg-purple-100' : 'bg-green-100'}">
+                        <i class="fas ${section.type === 'train' ? 'fa-train text-blue-600' :
+                                        section.type === 'metro' ? 'fa-subway text-purple-600' :
+                                                           'fa-bus text-green-600'} text-xs"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-medium">
+                            ${section.from} → ${section.to}
+                            <span class="text-gray-500">(${section.duration} min)</span>
+                        </div>
+                        <div class="text-gray-500">
+                            ${section.type === "train" ? "Train " + (section.line || "") :
+                                section.type === "metro" ? "Métro ligne " + (section.line || "") :
+                                                           "Bus " + (section.line || "")}
+                            ${section.platform ? "• Quai " + section.platform : ""}
+                        </div>
+                    </div>
+                </div>
+            `).join("");
+
+            resultsContainer.insertAdjacentHTML("beforeend", `
+                <div class="glass p-4 rounded-lg border-l-4 ${statusColor} mb-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <div class="font-bold text-lg">${journey.departure_time} → ${journey.arrival_time}</div>
+                                <span class="text-sm ${journey.status === "on_time" ? "text-green-600" :
+                                                       journey.status === "delayed" ? "text-yellow-600" : "text-red-600"}">
+                                    <i class="fas ${statusIcon} mr-1"></i> ${statusText}
+                                </span>
+                            </div>
+                            <div class="text-sm text-gray-500 mt-1">
+                                ${journey.duration} min • ${journey.type} • ${journey.sections.length} correspondance(s)
+                            </div>
+                            ${sourceInfo}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-medium">${journey.price ? journey.price + " €" : "Gratuit"}</span>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-gray-100">
+                        <div class="text-sm font-medium text-gray-700 mb-2">Détails du trajet</div>
+                        <div class="space-y-2">${sectionsHtml}</div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <a href="${journey.source === 'sncf' ? SNCF_URL : RATP_URL}" target="_blank"
+                           class="text-xs text-blue-600 hover:text-blue-800 flex items-center justify-center">
+                            Voir ce trajet sur ${journey.source === 'sncf' ? 'SNCF Connect' : 'RATP'}
+                            <i class="fas fa-external-link-alt ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+            `);
+        });
+    }
+
+    // =====================
+    // FILTERS
+    // =====================
+    function applyFilters() {
+        const statusFilter = document.getElementById("transport-status-filter").value;
+        const durationFilter = document.getElementById("transport-duration-filter").value;
+        const lineFilter = document.getElementById("transport-line-filter").value;
+        const filtered = currentResults.filter(j => {
+            if (statusFilter !== "all" && j.status !== statusFilter) return false;
+            if (durationFilter === "short" && j.duration > 30) return false;
+            if (durationFilter === "medium" && (j.duration < 30 || j.duration > 60)) return false;
+            if (durationFilter === "long" && j.duration < 60) return false;
+            if (lineFilter !== "all" && !j.sections.some(s => s.line?.includes(lineFilter))) return false;
+            return true;
+        });
+        renderJourneys(filtered);
+    }
+
+    // =====================
+    // EVENT LISTENERS
+    // =====================
+    searchBtn.addEventListener("click", fetchJourneys);
+    filtersToggle.addEventListener("click", () => filtersContainer.classList.toggle("hidden"));
+    document.querySelectorAll("#transport-filters select").forEach(select =>
+        select.addEventListener("change", applyFilters)
+    );
+    realtimeToggle.addEventListener("click", () => {
+        if (realtimeInterval) {
+            clearInterval(realtimeInterval);
+            realtimeInterval = null;
+            document.getElementById("transport-realtime-badge").classList.add("hidden");
+            realtimeToggle.classList.remove("bg-green-500");
+        } else {
+            fetchJourneys();
+            realtimeInterval = setInterval(fetchJourneys, 30000);
+            document.getElementById("transport-realtime-badge").classList.remove("hidden");
+            realtimeToggle.classList.add("bg-green-500");
+        }
+    });
+
+    // Initial load
+    fetchJourneys();
+});
+
+
+
+
+// dashboard
+
+document.addEventListener("DOMContentLoaded", () => {
+    // Configuration de base
+    const API_BASE = "/api";
+    const MASSY_WEBSITE = "https://www.ville-massy.fr/";
+    const SNCF_URL = "https://www.sncf-connect.com/";
+    const RATP_URL = "https://www.ratp.fr/itineraires";
+
+    // Sites partenaires
+    const PARTNER_SITES = [
+        {
+            name: "Commissariat de Massy",
+            url: "https://demarchesadministratives.fr/commissariat-police/massy-91300",
+            icon: "fa-shield-alt",
+            color: "blue-600",
+            bgColor: "bg-blue-100"
+        },
+        {
+            name: "SDIS 91 Massy-Igny",
+            url: "https://sdis91.fr/",
+            icon: "fa-fire-extinguisher",
+            color: "red-600",
+            bgColor: "bg-red-100"
+        },
+        {
+            name: "Hôpital Jacques Cartier",
+            url: "https://hopital-prive-jacques-cartier-massy.ramsaysante.fr/",
+            icon: "fa-hospital",
+            color: "green-600",
+            bgColor: "bg-green-100"
+        }
+    ];
+
+    // =====================
+    // INITIALISATION DU DASHBOARD
+    // =====================
+    const initDashboard = () => {
+        // Métriques principales
+        const metricsCards = [
+            { id: "opportunities-card", selector: ".border-blue-500 .text-3xl", icon: "fa-chart-line", color: "blue", title: "Opportunités détectées" },
+            { id: "risks-card", selector: ".border-amber-500 .text-3xl", icon: "fa-triangle-exclamation", color: "amber", title: "Alertes actives" },
+            { id: "analyses-card", selector: ".border-green-500 .text-3xl", icon: "fa-magnifying-glass-chart", color: "green", title: "Analyses en cours" }
+        ];
+
+        metricsCards.forEach(card => {
+            const element = document.querySelector(card.selector);
+            if (element) {
+                const cardElement = element.closest('.glass');
+                if (cardElement) {
+                    cardElement.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm text-gray-500">${card.title}</div>
+                                <div class="text-3xl font-bold mt-1" id="${card.id}-value">0</div>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-${card.color}-100 flex items-center justify-center">
+                                <i class="fas ${card.icon} text-${card.color}-600"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <a href="${MASSY_WEBSITE}" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center">
+                                Détails <i class="fas fa-external-link-alt ml-1"></i>
+                            </a>
+                        </div>
+                    `;
+                }
+            }
+        });
+
+        // Résumé du dashboard
+        const summaryEl = document.querySelector("#dashboard-summary");
+        if (summaryEl) {
+            summaryEl.innerHTML = `
+                <div class="text-gray-500 mb-2">Résumé des activités</div>
+                <div id="summary-content" class="text-gray-700">Chargement en cours...</div>
+                <div class="mt-2">
+                    <a href="${MASSY_WEBSITE}" target="_blank" class="text-blue-600 hover:underline text-xs flex items-center">
+                        Plus d'informations <i class="fas fa-external-link-alt ml-1"></i>
+                    </a>
+                </div>
+            `;
+        }
+    };
+
+    // =====================
+    // RÉCUPÉRATION DES DONNÉES
+    // =====================
+    const fetchAllData = async () => {
+        try {
+            // Affichage des indicateurs de chargement
+            document.querySelectorAll('.text-3xl').forEach(el => {
+                if (el) el.textContent = '<i class="fas fa-spinner fa-spin"></i>';
+            });
+            if (document.getElementById('summary-content')) {
+                document.getElementById('summary-content').textContent = 'Chargement en cours...';
+            }
+
+            // Récupération simultanée de toutes les données
+            const responses = await Promise.all([
+                fetch(`${API_BASE}/massy/metrics`, { headers: { "Content-Type": "application/json" }, credentials: "same-origin" }),
+                fetch(`${API_BASE}/massy/recent-activity`, { headers: { "Content-Type": "application/json" }, credentials: "same-origin" }),
+                fetch(`${API_BASE}/massy/alerts`, { headers: { "Content-Type": "application/json" }, credentials: "same-origin" }),
+                fetch(`${API_BASE}/massy/opportunities`, { headers: { "Content-Type": "application/json" }, credentials: "same-origin" }),
+                fetch(`${API_BASE}/massy/analyses`, { headers: { "Content-Type": "application/json" }, credentials: "same-origin" })
+            ]);
+
+            const [metricsData, activityData, alertsData, opportunitiesData, analysesData] = await Promise.all(
+                responses.map(res => res.json())
+            );
+
+            // Mise à jour des métriques
+            if (metricsData.data) {
+                document.getElementById('opportunities-card-value').textContent = metricsData.data.opportunities_count ?? 0;
+                document.getElementById('risks-card-value').textContent = metricsData.data.risks ?? 0;
+                document.getElementById('analyses-card-value').textContent = metricsData.data.cache_hits ?? 0;
+
+                if (document.getElementById('summary-content')) {
+                    document.getElementById('summary-content').textContent = metricsData.data.summary ?? "Aucun résumé disponible";
+                }
+            }
+
+            // Mise à jour des activités récentes
+            const recentActivityContainer = document.getElementById("recent-activity");
+            if (recentActivityContainer) {
+                recentActivityContainer.innerHTML = `
+                    
+                `;
+
+                if (!activityData.activities || activityData.activities.length === 0) {
+                    recentActivityContainer.innerHTML += `
+                        <div class="text-center py-6">
+                            <i class="fas fa-info-circle mb-4 text-2xl text-gray-400"></i>
+                            <div class="mb-4 text-gray-500">Aucune activité récente enregistrée</div>
+
+                            <div class="text-sm text-gray-600 mb-3">Consultez les services disponibles :</div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 max-w-4xl mx-auto">
+                                ${PARTNER_SITES.map(site => `
+                                    <a href="${site.url}" target="_blank"
+                                       class="flex flex-col items-center p-3 rounded-lg ${site.bgColor} hover:shadow-md transition-all">
+                                        <i class="fas ${site.icon} ${site.color} text-xl mb-2"></i>
+                                        <span class="text-xs font-medium text-center">${site.name}</span>
+                                    </a>
+                                `).join('')}
+
+                                <a href="${SNCF_URL}" target="_blank"
+                                   class="flex flex-col items-center p-3 rounded-lg bg-blue-100 hover:shadow-md transition-all">
+                                    <i class="fas fa-train text-blue-600 text-xl mb-2"></i>
+                                    <span class="text-xs font-medium text-center">SNCF Connect</span>
+                                </a>
+
+                                <a href="${RATP_URL}" target="_blank"
+                                   class="flex flex-col items-center p-3 rounded-lg bg-purple-100 hover:shadow-md transition-all">
+                                    <i class="fas fa-subway text-purple-600 text-xl mb-2"></i>
+                                    <span class="text-xs font-medium text-center">RATP Itinéraires</span>
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    activityData.activities.forEach(activity => {
+                        const iconClass = activity.icon === "train" ? "text-blue-600 bg-blue-100" :
+                                        activity.icon === "triangle-exclamation" ? "text-red-600 bg-red-100" :
+                                        "text-green-600 bg-green-100";
+
+                        const typeBadge = activity.type === "transport" ? "SNCF" :
+                                        activity.type === "security" ? "Urgent" :
+                                        "Info";
+
+                        recentActivityContainer.innerHTML += `
+                            <div class="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                                <div class="w-10 h-10 rounded-full ${iconClass} flex items-center justify-center shrink-0">
+                                    <i class="fas fa-${activity.icon} text-xl"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-medium text-gray-800">${activity.title}</div>
+                                    <div class="text-sm text-gray-500 mt-0.5">${activity.time} • ${activity.description}</div>
+                                </div>
+                                <span class="text-xs px-2 py-0.5 rounded-full ${
+                                    activity.type === "transport" ? "bg-blue-100 text-blue-800" :
+                                    activity.type === "security" ? "bg-red-100 text-red-800" :
+                                    "bg-gray-100 text-gray-800"
+                                }">${typeBadge}</span>
+                            </div>
+                        `;
+                    });
+                }
+            }
+
+            // Mise à jour des autres sections (alertes, opportunités, analyses)
+            // ... (le reste du code reste inchangé)
+
+        } catch (err) {
+            console.error("Erreur globale:", err);
+            // Gestion des erreurs
+            const errorMessage = document.createElement('div');
+            errorMessage.className = "p-4 rounded-lg bg-red-50 text-red-600 text-center";
+            errorMessage.innerHTML = `
+                <i class="fas fa-exclamation-triangle mb-2 text-xl"></i>
+                <div>Erreur de chargement des données</div>
+                <a href="${MASSY_WEBSITE}" target="_blank" class="text-blue-600 hover:underline text-xs flex items-center justify-center mt-2">
+                    Consulter les informations sur le site de Massy <i class="fas fa-external-link-alt ml-1"></i>
+                </a>
+            `;
+
+            // Affichage de l'erreur dans toutes les sections
+            const sections = ["recent-activity", "security-alerts", "traffic-alerts", "opportunities-list", "analyses-list"];
+            sections.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.innerHTML = '';
+                    element.appendChild(errorMessage.cloneNode(true));
+                }
+            });
+        }
+    };
+
+    // =====================
+    // BOUTONS DE RAFRAÎCHISSEMENT
+    // =====================
+    const setupRefreshButtons = () => {
+        const refreshMetricsBtn = document.getElementById("refresh-dashboard");
+        const refreshActivityBtn = document.getElementById("refresh-activity");
+
+        if (refreshMetricsBtn) {
+            refreshMetricsBtn.addEventListener("click", () => {
+                fetchAllData();
+                refreshMetricsBtn.innerHTML = `<i class="fas fa-sync fa-spin"></i> Rafraîchissement...`;
+                setTimeout(() => {
+                    if (refreshMetricsBtn) {
+                        refreshMetricsBtn.innerHTML = `<i class="fas fa-sync"></i> Rafraîchir`;
+                    }
+                }, 2000);
+            });
+        }
+
+        if (refreshActivityBtn) {
+            refreshActivityBtn.addEventListener("click", fetchAllData);
+        }
+    };
+
+    // =====================
+    // INITIALISATION
+    // =====================
+    initDashboard();
+    setupRefreshButtons();
+    fetchAllData();
+
+    // Rafraîchissement automatique toutes les minutes
+    setInterval(fetchAllData, 60000);
+});
+
+// parametre 
+
+document.addEventListener("DOMContentLoaded", () => {
+    const drawer = document.getElementById("transport-settings-drawer");
+    const openBtn = document.getElementById("transport-settings");
+    const closeBtn = document.getElementById("close-transport-settings");
+
+    const apiKeyInput = document.getElementById("navitia-api-key");
+    const testBtn = document.getElementById("test-api-key");
+    const saveBtn = document.getElementById("save-api-key");
+    const testResult = document.getElementById("test-result");
+
+    const showDelaysCheckbox = document.getElementById("show-delays");
+    const showRoutesCheckbox = document.getElementById("show-routes");
+
+    /**
+     * Ouvrir le panneau
+     */
+    function openDrawer() {
+        drawer.classList.remove("hidden");
+    }
+
+    /**
+     * Fermer le panneau
+     */
+    function closeDrawer() {
+        drawer.classList.add("hidden");
+    }
+
+    /**
+     * Charger les paramètres depuis localStorage
+     */
+    function loadSettings() {
+        const savedKey = localStorage.getItem("navitia_api_key");
+        if (savedKey) apiKeyInput.value = savedKey;
+
+        showDelaysCheckbox.checked = localStorage.getItem("show_delays") === "true";
+        showRoutesCheckbox.checked = localStorage.getItem("show_routes") === "true";
+    }
+
+    /**
+     * Sauvegarder les paramètres
+     */
+    function saveSettings() {
+        const key = apiKeyInput.value.trim();
+        if (!key) {
+            alert("Veuillez entrer une clé API avant de sauvegarder.");
+            return;
+        }
+        localStorage.setItem("navitia_api_key", key);
+        localStorage.setItem("show_delays", showDelaysCheckbox.checked);
+        localStorage.setItem("show_routes", showRoutesCheckbox.checked);
+
+        alert("✅ Paramètres sauvegardés avec succès !");
+        closeDrawer();
+    }
+
+    /**
+     * Tester la clé API en appelant Navitia
+     */
+    async function testApiKey() {
+        const key = apiKeyInput.value.trim();
+        if (!key) {
+            testResult.textContent = "⚠️ Veuillez entrer une clé avant de tester.";
+            testResult.className = "mt-3 text-yellow-600 font-bold text-center";
+            testResult.classList.remove("hidden");
+            return;
+        }
+
+        try {
+            const encoded = btoa(key + ":");
+            const response = await fetch("https://api.navitia.io/v1/coverage/fr-idf/", {
+                headers: { "Authorization": `Basic ${encoded}` }
+            });
+
+            if (response.ok) {
+                testResult.textContent = "✅ Clé API valide !";
+                testResult.className = "mt-3 text-green-600 font-bold text-center";
+            } else {
+                testResult.textContent = `❌ Clé invalide (code ${response.status})`;
+                testResult.className = "mt-3 text-red-600 font-bold text-center";
+            }
+        } catch (err) {
+            testResult.textContent = "⚠️ Erreur de connexion à l'API SNCF";
+            testResult.className = "mt-3 text-yellow-600 font-bold text-center";
+        }
+        testResult.classList.remove("hidden");
+    }
+
+    // --- Événements ---
+    openBtn.addEventListener("click", openDrawer);
+    closeBtn.addEventListener("click", closeDrawer);
+    saveBtn.addEventListener("click", saveSettings);
+    testBtn.addEventListener("click", testApiKey);
+
+    loadSettings();
+});
+
+
+// actualiter et comncer en meme temps 
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const API_BASE = "http://10.188.40.1:5000/api";
+  const MASSY_WEBSITE = "https://www.ville-massy.fr/";
+
+  /*** ===== SHOPS ===== ***/
+  const shopsResults = document.getElementById("shops-results");
+  const shopsSearchInput = document.getElementById("shops-search");
+  const shopsSearchBtn = document.getElementById("shops-search-btn");
+  const shopsCategory = document.getElementById("shops-category");
+  const shopsRating = document.getElementById("shops-rating");
+  const shopsDistance = document.getElementById("shops-distance");
+  const shopsApplyFilters = document.getElementById("shops-apply-filters");
+  let shopsCache = [], shopsPage = 1, shopsPerPage = 6, shopsLoading = false;
+
+  function renderSkeletonShops(count = 6) {
+    shopsResults.innerHTML = "";
+    for (let i = 0; i < count; i++) {
+      const div = document.createElement("div");
+      div.className = "glass p-4 rounded-lg mb-4 animate-pulse";
+      div.innerHTML = `
+        <div class="h-32 bg-gray-200 rounded mb-2"></div>
+        <div class="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
+        <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+      `;
+      shopsResults.appendChild(div);
+    }
+  }
+
+  function renderShopsPage() {
+    const start = (shopsPage - 1) * shopsPerPage;
+    const pageShops = shopsCache.slice(start, start + shopsPerPage);
+
+    // Ajout du lien vers le site de Massy en haut des résultats
+    if (shopsPage === 1) {
+      const massyLink = document.createElement("div");
+      massyLink.className = "glass p-4 rounded-lg mb-4 bg-blue-50";
+      massyLink.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <i class="fas fa-city text-blue-600 mr-2"></i>
+            <div>
+              <div class="font-bold text-blue-800">Ville de Massy</div>
+              <div class="text-sm text-blue-600">Site officiel</div>
+            </div>
+          </div>
+          <a href="${MASSY_WEBSITE}" target="_blank" class="fr-btn fr-btn--sm fr-btn--secondary">
+            Visiter le site <i class="fas fa-external-link-alt ml-1"></i>
+          </a>
+        </div>
+        <div class="mt-2 text-sm text-gray-600">
+          Pour plus d'informations sur les commerces et services de la ville
+        </div>
+      `;
+      shopsResults.appendChild(massyLink);
+    }
+
+    pageShops.forEach(shop => {
+      const div = document.createElement("div");
+      div.className = "glass p-4 rounded-lg mb-4 relative";
+      div.innerHTML = `
+        ${shop.is_open ? `<span class="absolute top-2 right-2 badge bg-green-100 text-green-800">OUVERT</span>`
+                      : `<span class="absolute top-2 right-2 badge bg-gray-200 text-gray-700">FERMÉ</span>`}
+        <div class="font-bold text-gray-800">${shop.name || '-'}</div>
+        <div class="text-sm text-gray-500">${(shop.types || []).join(', ') || 'Commerce'}</div>
+        <div class="text-sm text-gray-500">${shop.address || ''}</div>
+        <div class="mt-2">
+          <a href="${MASSY_WEBSITE}" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center">
+            Plus d'infos sur Massy <i class="fas fa-external-link-alt ml-1"></i>
+          </a>
+        </div>
+      `;
+      shopsResults.appendChild(div);
+    });
+
+    shopsPage++;
+    shopsLoading = false;
+  }
+
+  async function fetchShops(params = {}) {
+    renderSkeletonShops();
+    try {
+      const queryParams = new URLSearchParams();
+      for (const key in params) {
+        if (params[key] !== undefined && params[key] !== "all") queryParams.append(key, params[key]);
+      }
+      const res = await fetch(`${API_BASE}/shops/nearby?${queryParams}`);
+      const data = await res.json();
+      shopsCache = data.shops || [];
+      shopsPage = 1;
+      shopsResults.innerHTML = "";
+      renderShopsPage();
+    } catch (err) {
+      shopsResults.innerHTML = `
+        <div class="glass p-4 rounded-lg mb-4 bg-red-50 text-center">
+          <div class="text-red-600 mb-2">Erreur lors de la récupération des commerces</div>
+          <a href="${MASSY_WEBSITE}" target="_blank" class="fr-btn fr-btn--sm fr-btn--secondary">
+            Consulter les commerces sur le site de Massy <i class="fas fa-external-link-alt ml-1"></i>
+          </a>
+        </div>
+      `;
+    }
+  }
+
+  /*** ===== NEWS ===== ***/
+  const newsList = document.getElementById("news-list");
+  const newsCategory = document.getElementById("news-category");
+  const newsRefreshBtn = document.getElementById("news-refresh");
+  let newsCache = [], newsPage = 1, newsPerPage = 3;
+
+  function renderSkeletonNews(count = 3) {
+    newsList.innerHTML = "";
+    for (let i = 0; i < count; i++) {
+      const div = document.createElement("div");
+      div.className = "glass p-5 rounded-xl mb-4 animate-pulse";
+      div.innerHTML = `
+        <div class="h-32 bg-gray-200 rounded mb-2"></div>
+        <div class="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
+        <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+      `;
+      newsList.appendChild(div);
+    }
+  }
+
+  function renderNewsPage() {
+    // Ajout du lien vers le site de Massy en haut des actualités
+    if (newsPage === 1) {
+      const massyLink = document.createElement("div");
+      massyLink.className = "glass p-4 rounded-xl mb-4 bg-blue-50";
+      massyLink.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <i class="fas fa-newspaper text-blue-600 mr-2"></i>
+            <div>
+              <div class="font-bold text-blue-800">Actualités de Massy</div>
+              <div class="text-sm text-blue-600">Site officiel</div>
+            </div>
+          </div>
+          <a href="${MASSY_WEBSITE}" target="_blank" class="fr-btn fr-btn--sm fr-btn--secondary">
+            Voir toutes les actualités <i class="fas fa-external-link-alt ml-1"></i>
+          </a>
+        </div>
+      `;
+      newsList.appendChild(massyLink);
+    }
+
+    const start = (newsPage - 1) * newsPerPage;
+    const pageNews = newsCache.slice(start, start + newsPerPage);
+
+    pageNews.forEach(news => {
+      const div = document.createElement("div");
+      div.className = "glass p-5 rounded-xl mb-4";
+      div.innerHTML = `
+        <div class="flex flex-col md:flex-row gap-4">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="badge ${
+                news.category === 'local' ? 'bg-blue-100 text-blue-800' :
+                news.category === 'national' ? 'bg-red-100 text-red-800' :
+                news.category === 'security' ? 'bg-amber-100 text-amber-800' :
+                news.category === 'transport' ? 'bg-indigo-100 text-indigo-800' :
+                'bg-gray-100 text-gray-800'
+              }">${news.category || 'Général'}</span>
+              <span class="text-sm text-gray-500">${news.date || 'Date inconnue'}</span>
+            </div>
+            <h3 class="font-bold text-gray-800 text-lg mb-2">${news.title || 'Titre inconnu'}</h3>
+            <p class="text-gray-600 mb-3 line-clamp-3">${news.content || ''}</p>
+            <div class="flex flex-wrap gap-2 items-center">
+              ${(news.tags || []).map(tag => `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">${tag}</span>`).join('')}
+              <a href="${MASSY_WEBSITE}" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center ml-auto">
+                Plus d'infos <i class="fas fa-external-link-alt ml-1"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      `;
+      newsList.appendChild(div);
+    });
+    newsPage++;
+  }
+
+  async function fetchNews(category = "all") {
+    renderSkeletonNews();
+    try {
+      const res = await fetch(`${API_BASE}/news/?category=${category}`);
+      const data = await res.json();
+      newsCache = data.news_items || [];
+      newsPage = 1;
+      newsList.innerHTML = "";
+      renderNewsPage();
+    } catch (err) {
+      newsList.innerHTML = `
+        <div class="glass p-5 rounded-xl mb-4 bg-red-50 text-center">
+          <div class="text-red-600 mb-2">Erreur lors de la récupération des actualités</div>
+          <a href="${MASSY_WEBSITE}" target="_blank" class="fr-btn fr-btn--sm fr-btn--secondary">
+            Consulter les actualités sur le site de Massy <i class="fas fa-external-link-alt ml-1"></i>
+          </a>
+        </div>
+      `;
+    }
+  }
+
+  /*** ===== DASHBOARD / METRICS ===== ***/
+  const metricsOpportunities = document.getElementById("metric-opportunities");
+  const metricsRisks = document.getElementById("metric-risks");
+  const metricsAnalyses = document.getElementById("metric-analyses");
+  const metricsSummary = document.getElementById("metric-summary");
+  const recentActivities = document.getElementById("recent-activities");
+
+  async function fetchMetrics() {
+    try {
+      const res = await fetch(`${API_BASE}/massy/metrics`);
+      const data = await res.json();
+      const d = data.data || {};
+
+      if(metricsOpportunities) metricsOpportunities.textContent = d.opportunities || 0;
+      if(metricsRisks) metricsRisks.textContent = d.risks || 0;
+      if(metricsAnalyses) metricsAnalyses.textContent = d.cache_hits || 0;
+      if(metricsSummary) {
+        metricsSummary.innerHTML = d.summary || "";
+        // Ajout du lien vers le site de Massy dans le résumé
+        if (d.summary) {
+          metricsSummary.innerHTML += `
+            <div class="mt-2">
+              <a href="${MASSY_WEBSITE}" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center">
+                Plus d'informations sur le site de Massy <i class="fas fa-external-link-alt ml-1"></i>
+              </a>
+            </div>
+          `;
+        }
+      }
+    } catch(err) {
+      if(metricsSummary) {
+        metricsSummary.innerHTML = `
+          Erreur lors de la récupération des KPIs
+          <div class="mt-2">
+            <a href="${MASSY_WEBSITE}" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center">
+              Consulter les indicateurs sur le site de Massy <i class="fas fa-external-link-alt ml-1"></i>
+            </a>
+          </div>
+        `;
+      }
+    }
+  }
+
+  async function fetchRecentActivities() {
+    try {
+      const res = await fetch(`${API_BASE}/massy/recent-activity`);
+      const data = await res.json();
+
+      // Ajout du lien vers le site de Massy en haut des activités
+      const massyLink = document.createElement("div");
+      massyLink.className = "glass p-3 rounded-lg mb-3 bg-blue-50 text-sm";
+      massyLink.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <i class="fas fa-calendar-alt text-blue-600 mr-2"></i>
+            <span class="text-blue-800 font-medium">Activités récentes à Massy</span>
+          </div>
+          <a href="${MASSY_WEBSITE}" target="_blank" class="text-blue-600 hover:underline text-xs">
+            Voir le calendrier complet <i class="fas fa-external-link-alt ml-1"></i>
+          </a>
+        </div>
+      `;
+      recentActivities.innerHTML = "";
+      recentActivities.appendChild(massyLink);
+
+      (data.activities || []).forEach(act => {
+        const li = document.createElement("li");
+        li.className = "py-2 px-3 border-b border-gray-100 hover:bg-gray-50";
+        li.innerHTML = `
+          <div class="flex justify-between items-center">
+            <div>
+              <span class="text-sm">${act.time}</span>
+              <span class="font-medium ml-2">${act.title}</span>
+            </div>
+            <a href="${MASSY_WEBSITE}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs">
+              <i class="fas fa-info-circle"></i>
+            </a>
+          </div>
+        `;
+        recentActivities.appendChild(li);
+      });
+    } catch(err) {
+      recentActivities.innerHTML = `
+        <div class="glass p-3 rounded-lg mb-3 bg-red-50 text-sm">
+          <div class="text-red-600 mb-1">Erreur lors de la récupération des activités</div>
+          <a href="${MASSY_WEBSITE}" target="_blank" class="text-blue-600 hover:underline text-xs">
+            Consulter les activités sur le site de Massy <i class="fas fa-external-link-alt ml-1"></i>
+          </a>
+        </div>
+      `;
+    }
+  }
+
+  // Initialisation
+  shopsSearchBtn.addEventListener("click", () => {
+    fetchShops({
+      query: shopsSearchInput.value,
+      type: shopsCategory.value,
+      rating: shopsRating.value,
+      radius: shopsDistance.value,
+      lat: 48.735,
+      lng: 2.29
+    });
+  });
+
+  shopsApplyFilters.addEventListener("click", () => shopsSearchBtn.click());
+  newsRefreshBtn.addEventListener("click", () => fetchNews(newsCategory.value));
+  newsCategory.addEventListener("change", () => fetchNews(newsCategory.value));
+
+  // Chargement initial
+  fetchShops({lat: 48.735, lng: 2.29, radius: 1000});
+  fetchNews("all");
+  fetchMetrics();
+  fetchRecentActivities();
+
+  // Auto-refresh toutes les 5 minutes
+  setInterval(() => {
+    fetchShops({lat: 48.735, lng: 2.29, radius: 1000});
+    fetchNews(newsCategory.value);
+    fetchMetrics();
+    fetchRecentActivities();
+  }, 300000);
+});
+
+
+    </script>
+</body>
+</html>
+
+
+
+
+
