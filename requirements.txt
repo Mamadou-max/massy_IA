@@ -18,11 +18,11 @@ requests==2.31.0
 gunicorn==21.2.0
 httpx==0.25.0
 
-# AI Services (versions stables et précompilées pour Render)
+# AI Services (versions stables et précompilées)
 openai==0.28.1
 chromadb==0.4.15
 sentence-transformers==2.2.2
-tokenizers==0.13.3
+tokenizers==0.18.0
 transformers==4.35.2
 
 # Utilities
