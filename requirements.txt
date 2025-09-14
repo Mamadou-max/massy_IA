@@ -22,7 +22,7 @@ httpx==0.25.0
 openai==0.28.1
 chromadb==0.4.15
 sentence-transformers==2.2.2
-tokenizers==0.15.0
+tokenizers==0.13.3
 transformers==4.35.2
 
 # Utilities
