@@ -18,7 +18,7 @@ requests==2.31.0
 gunicorn==21.2.0
 httpx==0.25.0
 
-# AI Services (versions stables et précompilées)
+# AI Services
 openai==0.28.1
 chromadb==0.4.15
 sentence-transformers==2.2.2
