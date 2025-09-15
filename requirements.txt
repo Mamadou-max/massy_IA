@@ -1,45 +1,63 @@
 # Core
 Flask==2.3.3
 python-dotenv==1.0.0
+Werkzeug==2.3.7
 
 # Database
 Flask-SQLAlchemy==3.0.5
 Flask-Migrate==4.0.5
+SQLAlchemy==2.0.23
+alembic==1.12.3
 psycopg2-binary==2.9.9
-SQLAlchemy==2.0.38
+PyMySQL==1.1.0
+mysqlclient==2.1.1
 
 # Authentication
 Flask-JWT-Extended==4.5.3
 bcrypt==4.0.1
 PyJWT==2.8.0
+passlib==1.7.4
 
 # API & HTTP
 requests==2.31.0
-gunicorn==21.2.0
 httpx==0.25.0
+gunicorn==21.2.0
+flask-restful==0.3.9
+flask-apispec==0.11.0
 
-# AI Services
+# AI / ML Services
 openai==0.28.1
 chromadb==0.4.15
 sentence-transformers==2.2.2
-tokenizers==0.15.2
 transformers==4.35.2
+tokenizers==0.15.2
+numpy==1.26.0
+scipy==1.11.1
+torch==2.1.0
 
 # Utilities
 tenacity==8.2.3
 PyPDF2==3.0.1
 python-multipart==0.0.6
+python-dateutil==2.8.2
+pytz==2025.7
 
-# Parsing / Web scraping
-beautifulsoup4==4.13.5
-
-# CORS
+# CORS & Rate limiting
 Flask-CORS==4.0.0
-
-# Rate limiting
 Flask-Limiter==3.5.0
+
+# Scheduling / Optional (si tu n'utilises pas n8n)
 APScheduler==3.10.5
+
 # Testing
 pytest==7.4.3
 pytest-cov==4.1.0
 responses==0.24.0
+coverage==7.5.0
+tox==4.11.2
+
+# Development / Linting / Formatting
+ipython==8.15.0
+black==24.3.0
+flake8==7.0.0
+mypy==1.5.1
