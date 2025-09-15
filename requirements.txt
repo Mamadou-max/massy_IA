@@ -8,7 +8,6 @@ Flask-Migrate==4.0.5
 psycopg2-binary==2.9.9
 SQLAlchemy==2.0.38
 
-
 # Authentication
 Flask-JWT-Extended==4.5.3
 bcrypt==4.0.1
@@ -30,6 +29,9 @@ transformers==4.35.2
 tenacity==8.2.3
 PyPDF2==3.0.1
 python-multipart==0.0.6
+
+# Parsing / Web scraping
+beautifulsoup4==4.13.5
 
 # CORS
 Flask-CORS==4.0.0
