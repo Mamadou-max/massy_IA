@@ -12,6 +12,9 @@ from backend.models import User, UserRole
 from backend.utils.security import validate_password, validate_email
 from backend.utils.helpers import create_response, error_response
 
+
+
+
 # Blueprint API (pour les endpoints JSON)
 auth_bp = Blueprint('api/auth', __name__ , url_prefix="/api/auth")
 
@@ -28,6 +31,12 @@ def login_page():
 def register_page():
     """Affiche la page d'inscription"""
     return render_template('auth/register.html')
+
+
+from flask import render_template, redirect, url_for
+from flask_jwt_extended import get_jwt_identity, jwt_required
+from backend.models.user import User
+
 
 
 # -------------------------------
@@ -244,3 +253,9 @@ def list_users():
     except Exception as e:
         current_app.logger.error(f"Erreur liste utilisateurs: {str(e)}")
         return error_response("Erreur lors de la récupération de la liste", 500)
+
+
+
+
+
+

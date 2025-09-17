@@ -82,4 +82,4 @@ def index(tab='dashboard'):
         'chat_messages': chat_messages
     }
 
-    return render_template('index.html', **context , title="Massy IA - Accueil" ,  datetime=datetime)
+    return render_template('index.html', **context , title="Massy IA - Accueil" ,  datetime=datetime )

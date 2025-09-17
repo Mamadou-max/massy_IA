@@ -174,7 +174,7 @@
                         <button type="submit" class="btn btn-primary w-full py-2.5 mt-2">
                             <i class="fas fa-sign-in-alt mr-2"></i> Se connecter
                         </button>
-                    </form>
+                    </form>                    
                     <div class="mt-6">
                         <div class="relative">
                             <div class="absolute inset-0 flex items-center">
@@ -282,6 +282,27 @@
                     <div class="auth-footer mt-8 text-center">
                         <p>Déjà un compte ? <a href="#" id="show-login">Se connecter</a></p>
                     </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 </div>
                 <!-- Paramètres du Compte -->
                 {% if current_user %}
@@ -487,88 +508,114 @@
             </div>
         </div>
     </div>
+
+    
+
+
+
+
     <!-- Scripts -->
-    <script>
-        // État de l'application
-        const authState = {
-            currentTab: 'login',
-            passwordStrength: 0,
-            currentUser: {
-                id: "{{ current_user.id if current_user else '' }}",
-                isAuthenticated: {{ 'true' if current_user else 'false' }}
-            }
-        };
-        // Changement d'onglet
-        document.querySelectorAll('.auth-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                // Désactiver tous les onglets
-                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                // Activer l'onglet cliqué
-                tab.classList.add('active');
-                const tabId = tab.getAttribute('data-tab');
-                document.getElementById(`${tabId}-form`).classList.add('active');
-                authState.currentTab = tabId;
-            });
-        });
-        // Navigation entre login/inscription
-        document.getElementById('show-register').addEventListener('click', (e) => {
-            e.preventDefault();
-            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('register-tab').classList.add('active');
-            document.getElementById('register-form').classList.add('active');
-            authState.currentTab = 'register';
-        });
-        document.getElementById('show-login').addEventListener('click', (e) => {
-            e.preventDefault();
-            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('login-tab').classList.add('active');
-            document.getElementById('login-form').classList.add('active');
-            authState.currentTab = 'login';
-        });
-        // Toggle mot de passe
-        document.querySelectorAll('.toggle-password').forEach(icon => {
-            icon.addEventListener('click', () => {
-                const input = icon.previousElementSibling;
-                const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
-                input.setAttribute('type', type);
-                icon.classList.toggle('fa-eye');
-                icon.classList.toggle('fa-eye-slash');
-            });
-        });
-        // Force du mot de passe
-        const passwordInput = document.getElementById('register-password');
-        const strengthBar = document.getElementById('password-strength-bar');
-        if (passwordInput && strengthBar) {
-            passwordInput.addEventListener('input', (e) => {
-                const password = e.target.value;
-                let strength = 0;
-                // Longueur
-                if (password.length >= 8) strength++;
-                if (password.length >= 12) strength++;
-                // Majuscules
-                if (/[A-Z]/.test(password)) strength++;
-                // Chiffres
-                if (/[0-9]/.test(password)) strength++;
-                // Caractères spéciaux
-                if (/[^A-Za-z0-9]/.test(password)) strength++;
-                // Mise à jour de la barre
-                authState.passwordStrength = strength;
-                strengthBar.className = 'password-strength-bar';
-                if (password.length > 0) {
-                    strengthBar.classList.add(`strength-${Math.min(strength, 4)}`);
-                }
-            });
-        }
-        // Validation du formulaire d'inscription
-    const registerForm = document.getElementById('registerForm');
+   <script>
+const authState = {
+    currentTab: 'login',
+    passwordStrength: 0,
+    currentUser: {
+        id: null,
+        isAuthenticated: false,
+        data: null
+    }
+};
+
+// ------------------------------
+// Gestion des onglets
+// ------------------------------
+function showTab(tabId) {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    const tab = document.getElementById(`${tabId}-tab`);
+    const form = document.getElementById(`${tabId}-form`);
+    if (tab && form) {
+        tab.classList.add('active');
+        form.classList.add('active');
+        authState.currentTab = tabId;
+    }
+}
+
+document.querySelectorAll('.auth-tab').forEach(tab => {
+    tab.addEventListener('click', () => showTab(tab.getAttribute('data-tab')));
+});
+
+document.getElementById('show-register')?.addEventListener('click', e => {
+    e.preventDefault();
+    showTab('register');
+});
+
+document.getElementById('show-login')?.addEventListener('click', e => {
+    e.preventDefault();
+    showTab('login');
+});
+
+// ------------------------------
+// Toggle mot de passe
+// ------------------------------
+document.querySelectorAll('.toggle-password').forEach(icon => {
+    icon.addEventListener('click', () => {
+        const input = icon.previousElementSibling;
+        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+        input.setAttribute('type', type);
+        icon.classList.toggle('fa-eye');
+        icon.classList.toggle('fa-eye-slash');
+    });
+});
+
+// ------------------------------
+// Barre de force du mot de passe
+// ------------------------------
+const passwordInput = document.getElementById('register-password');
+const strengthBar = document.getElementById('password-strength-bar');
+
+if (passwordInput && strengthBar) {
+    passwordInput.addEventListener('input', e => {
+        const password = e.target.value;
+        let strength = 0;
+        if (password.length >= 8) strength++;
+        if (password.length >= 12) strength++;
+        if (/[A-Z]/.test(password)) strength++;
+        if (/[0-9]/.test(password)) strength++;
+        if (/[^A-Za-z0-9]/.test(password)) strength++;
+        authState.passwordStrength = strength;
+        strengthBar.className = 'password-strength-bar';
+        if (password.length > 0) strengthBar.classList.add(`strength-${Math.min(strength, 4)}`);
+    });
+}
+
+// ------------------------------
+// Notifications
+// ------------------------------
+function showNotification(message, type = 'success') {
+    let toast = document.getElementById('notification-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'notification-toast';
+        toast.className = 'fixed top-4 right-4 z-[1000] px-4 py-2 rounded-md text-white shadow-lg hidden';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.className = `fixed top-4 right-4 z-[1000] px-4 py-2 rounded-md text-white shadow-lg ${
+        type === 'error' ? 'bg-red-500' : 'bg-green-500'
+    }`;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 5000);
+}
+
+// ------------------------------
+// Formulaire inscription
+// ------------------------------
+const registerForm = document.getElementById('registerForm');
 
 if (registerForm) {
-    registerForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); // Empêche le submit classique
-
+    registerForm.addEventListener('submit', async e => {
+        e.preventDefault();
         const firstName = document.getElementById('first_name').value;
         const lastName = document.getElementById('last_name').value;
         const email = document.getElementById('register-email').value;
@@ -576,39 +623,32 @@ if (registerForm) {
         const confirmPassword = document.getElementById('confirm-password').value;
         const role = document.getElementById('role').value;
 
-        // Vérification mots de passe
         if (password !== confirmPassword) {
             showNotification('Les mots de passe ne correspondent pas', 'error');
             return;
         }
-
         if (authState.passwordStrength < 3) {
-            showNotification('Le mot de passe est trop faible (min. 3/5)', 'error');
+            showNotification('Le mot de passe est trop faible (min 3/5)', 'error');
             return;
         }
 
         try {
-            const response = await fetch("{{ url_for('api/auth.register') }}", {
+            const response = await fetch("/api/auth/register", {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email: email,
-                    username: email.split('@')[0], // 🆕 génère un username simple à partir de l'email
+                    username: email.split('@')[0],
                     password: password,
                     first_name: firstName,
                     last_name: lastName,
                     role: role
                 })
             });
-
             const data = await response.json();
-            console.log("Réponse API register:", data); // 🟢 log debug
-
             if (data.success) {
                 showNotification('Compte créé avec succès', 'success');
-                setTimeout(() => window.location.href = "{{ url_for('frontend.index') }}", 2000);
+                setTimeout(() => window.location.href = "/", 2000);
             } else {
                 showNotification(data.message || 'Erreur lors de l\'inscription', 'error');
             }
@@ -618,40 +658,29 @@ if (registerForm) {
     });
 }
 
-
-
-
-// page login 
+// ------------------------------
+// Formulaire login
+// ------------------------------
 const loginForm = document.getElementById('loginForm');
 
 if (loginForm) {
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); // Empêche le submit classique
-
+    loginForm.addEventListener('submit', async e => {
+        e.preventDefault();
         const email = document.getElementById("login-email").value;
         const password = document.getElementById('login-password').value;
 
         try {
-            const response = await fetch("{{ url_for('api/auth.login') }}", {
+            const response = await fetch("/api/auth/login", {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    email: email,
-                    password: password
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
             });
-
             const data = await response.json();
-            console.log("Réponse API login:", data); 
-
             if (data.success) {
+                localStorage.setItem('access_token', data.data.access_token);
+                localStorage.setItem('refresh_token', data.data.refresh_token);
                 showNotification('Connexion réussie', 'success');
-                 localStorage.setItem('access_token', data.data.access_token);
-    localStorage.setItem('refresh_token', data.data.refresh_token);
-                // Redirection après login
-                setTimeout(() => window.location.href = "{{ url_for('frontend.index') }}", 1000);
+                setTimeout(() => window.location.href = "/", 1000);
             } else {
                 showNotification(data.message || 'Email ou mot de passe incorrect', 'error');
             }
@@ -661,94 +690,87 @@ if (loginForm) {
     });
 }
 
+// ------------------------------
+// Récupération du profil actuel
+// ------------------------------
+async function fetchCurrentUser() {
+    const accessToken = localStorage.getItem('access_token');
+    if (!accessToken) return;
 
-        // Gestion de la suppression de compte
-        const deleteAccountBtn = document.getElementById('delete-account-btn');
-        const deleteAccountModal = document.getElementById('delete-account-modal');
-        const deleteConfirmInput = document.getElementById('delete-account-confirm');
-        const deleteConfirmBtn = document.getElementById('delete-account-confirm-btn');
-        if (deleteAccountBtn && deleteAccountModal) {
-            deleteAccountBtn.addEventListener('click', () => {
-                deleteAccountModal.classList.add('active');
-                deleteConfirmInput.value = '';
-                deleteConfirmBtn.disabled = true;
-            });
-        }
-        if (deleteConfirmInput && deleteConfirmBtn) {
-            deleteConfirmInput.addEventListener('input', () => {
-                deleteConfirmBtn.disabled = deleteConfirmInput.value !== 'SUPPRIMER MON COMPTE';
-            });
-            deleteConfirmBtn.addEventListener('click', () => {
-                // Ici, tu ferais une requête AJAX vers ton backend Flask
-                fetch("{{ url_for('api/auth.logout') }}", {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json'
-                        
-                    },
-                    body: JSON.stringify({ confirm: true })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showNotification('Compte supprimé avec succès', 'success');
-                        setTimeout(() => {
-                            window.location.href = "{{ url_for('api/auth.logout') }}";
-                        }, 2000);
-                    } else {
-                        showNotification(data.message || 'Erreur lors de la suppression', 'error');
-                    }
-                })
-                .catch(error => {
-                    showNotification('Erreur réseau: ' + error.message, 'error');
-                });
-            });
-        }
-        // Fermeture des modals
-        document.querySelectorAll('[id$="-modal-close"]').forEach(button => {
-            button.addEventListener('click', () => {
-                document.querySelectorAll('.modal-overlay').forEach(modal => {
-                    modal.classList.remove('active');
-                });
-            });
+    try {
+        const response = await fetch("/api/auth/me", {
+            headers: { "Authorization": `Bearer ${accessToken}` }
         });
-        // Notifications
-        function showNotification(message, type = 'success') {
-    // Vérifie si l'élément existe, sinon le crée
-    let toast = document.getElementById('notification-toast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'notification-toast';
-        toast.className = 'fixed top-4 right-4 z-[1000] px-4 py-2 rounded-md text-white shadow-lg hidden';
-        document.body.appendChild(toast);
+        const data = await response.json();
+        if (data.success && data.data.user) {
+            authState.currentUser.isAuthenticated = true;
+            authState.currentUser.id = data.data.user.id;
+            authState.currentUser.data = data.data.user;
+            showTab('settings');
+        }
+    } catch (error) {
+        console.error("Erreur récupération utilisateur:", error);
     }
-
-    // Met à jour le message et la couleur
-    toast.textContent = message;
-    toast.className = `fixed top-4 right-4 z-[1000] px-4 py-2 rounded-md text-white shadow-lg ${
-        type === 'error' ? 'bg-red-500' : 'bg-green-500'
-    }`;
-
-    // Affiche la notification
-    toast.classList.remove('hidden');
-
-    // Cache la notification après 5 secondes
-    setTimeout(() => {
-        toast.classList.add('hidden');
-    }, 5000);
 }
 
-        // Initialisation
-        document.addEventListener('DOMContentLoaded', () => {
-            // Si l'utilisateur est connecté, afficher l'onglet paramètres
-            if (authState.currentUser.isAuthenticated) {
-                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.getElementById('settings-tab').classList.add('active');
-                document.getElementById('settings-form').classList.add('active');
-                authState.currentTab = 'settings';
+// ------------------------------
+// Suppression de compte
+// ------------------------------
+const deleteAccountBtn = document.getElementById('delete-account-btn');
+const deleteAccountModal = document.getElementById('delete-account-modal');
+const deleteConfirmInput = document.getElementById('delete-account-confirm');
+const deleteConfirmBtn = document.getElementById('delete-account-confirm-btn');
+
+if (deleteAccountBtn && deleteAccountModal) {
+    deleteAccountBtn.addEventListener('click', () => {
+        deleteAccountModal.classList.add('active');
+        deleteConfirmInput.value = '';
+        deleteConfirmBtn.disabled = true;
+    });
+}
+
+if (deleteConfirmInput && deleteConfirmBtn) {
+    deleteConfirmInput.addEventListener('input', () => {
+        deleteConfirmBtn.disabled = deleteConfirmInput.value !== 'SUPPRIMER MON COMPTE';
+    });
+    deleteConfirmBtn.addEventListener('click', async () => {
+        try {
+            const response = await fetch("/api/auth/logout", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ confirm: true })
+            });
+            const data = await response.json();
+            if (data.success) {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                showNotification('Compte supprimé avec succès', 'success');
+                setTimeout(() => window.location.href = "/", 2000);
+            } else {
+                showNotification(data.message || 'Erreur lors de la suppression', 'error');
             }
-        });
-    </script>
+        } catch (error) {
+            showNotification('Erreur réseau: ' + error.message, 'error');
+        }
+    });
+}
+
+// ------------------------------
+// Fermeture modals
+// ------------------------------
+document.querySelectorAll('[id$="-modal-close"]').forEach(button => {
+    button.addEventListener('click', () => {
+        document.querySelectorAll('.modal-overlay').forEach(modal => modal.classList.remove('active'));
+    });
+});
+
+// ------------------------------
+// Initialisation
+// ------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+    fetchCurrentUser();
+});
+</script>
+
 </body>
 </html>
